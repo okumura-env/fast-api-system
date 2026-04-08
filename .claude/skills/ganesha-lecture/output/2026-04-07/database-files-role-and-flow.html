@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FastAPIプロジェクトのDB関連ファイル — 役割と流れ | ガネーシャ講座</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Noto Sans JP","Hiragino Sans",sans-serif;
+    background:linear-gradient(135deg,#f0f4ff 0%,#f5f0ff 50%,#eef2ff 100%);
+    color:#374151;
+    line-height:1.8;
+    padding:0;
+    min-height:100vh;
+  }
+  .header{
+    background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#6366f1 100%);
+    color:#fff;
+    text-align:center;
+    padding:2.5rem 1rem 2rem;
+  }
+  .header h1{font-size:28px;font-weight:700;color:#ffffff;margin-bottom:.5rem}
+  .header .subtitle{font-size:.95rem;opacity:.92}
+  .container{max-width:880px;margin:0 auto;padding:1.2rem 1rem 3rem}
+
+  /* Conclusion box */
+  .conclusion-box{
+    background:linear-gradient(135deg,#eef2ff 0%,#f5f3ff 100%);
+    border:2px solid #7c3aed;
+    border-radius:14px;
+    padding:1.4rem 1.5rem;
+    margin:1.5rem 0 2rem;
+    font-size:.95rem;
+    line-height:1.9;
+    color:#4c1d95;
+  }
+  .conclusion-box strong{color:#7c3aed;font-weight:700}
+
+  hr{border:none;border-top:2px dashed #c7d2fe;margin:2.2rem 0}
+
+  /* Section headings */
+  h2{
+    font-size:1.3rem;
+    color:#312e81;
+    margin:2rem 0 1rem;
+    padding-bottom:.4rem;
+    border-bottom:3px solid #6366f1;
+    display:inline-block;
+  }
+
+  /* Chat bubbles */
+  .bubble{
+    display:flex;
+    gap:.7rem;
+    margin:.8rem 0;
+    align-items:flex-start;
+  }
+  .bubble.ganesha{flex-direction:row}
+  .bubble.natsuki{flex-direction:row-reverse}
+
+  .avatar-ganesha{
+    flex-shrink:0;
+    width:96px;height:96px;
+    border-radius:50%;
+    border:2px solid #f59e0b;
+    object-fit:cover;
+  }
+  .avatar-natsuki{
+    flex-shrink:0;
+    width:80px;height:80px;
+    border-radius:50%;
+    border:2px solid #818cf8;
+    object-fit:cover;
+  }
+
+  .bubble .text{
+    max-width:85%;
+    padding:.85rem 1.1rem;
+    border-radius:16px;
+    font-size:.95rem;
+    line-height:1.75;
+    position:relative;
+    color:#1e293b;
+  }
+  .bubble .text strong{color:#7c3aed;font-weight:700}
+
+  .bubble.ganesha .text{
+    background:#ffffff;
+    border:1px solid #f59e0b;
+    border-radius:16px 16px 16px 4px;
+    box-shadow:0 1px 3px rgba(245,158,11,0.15);
+  }
+  /* Ganesha tail */
+  .bubble.ganesha .text::before{
+    content:"";
+    position:absolute;
+    left:-8px;top:16px;
+    width:0;height:0;
+    border-top:6px solid transparent;
+    border-bottom:6px solid transparent;
+    border-right:8px solid #f59e0b;
+  }
+  .bubble.ganesha .text::after{
+    content:"";
+    position:absolute;
+    left:-6px;top:17px;
+    width:0;height:0;
+    border-top:5px solid transparent;
+    border-bottom:5px solid transparent;
+    border-right:7px solid #ffffff;
+  }
+
+  .bubble.natsuki .text{
+    background:#ffffff;
+    border:1px solid #818cf8;
+    border-radius:16px 16px 4px 16px;
+    box-shadow:0 1px 3px rgba(129,140,248,0.15);
+  }
+  /* Natsuki tail */
+  .bubble.natsuki .text::before{
+    content:"";
+    position:absolute;
+    right:-8px;top:16px;
+    width:0;height:0;
+    border-top:6px solid transparent;
+    border-bottom:6px solid transparent;
+    border-left:8px solid #818cf8;
+  }
+  .bubble.natsuki .text::after{
+    content:"";
+    position:absolute;
+    right:-6px;top:17px;
+    width:0;height:0;
+    border-top:5px solid transparent;
+    border-bottom:5px solid transparent;
+    border-left:7px solid #ffffff;
+  }
+
+  /* Tables */
+  .table-wrap{overflow-x:auto;margin:1rem 0}
+  table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+    border-radius:10px;
+    overflow:hidden;
+    font-size:.9rem;
+    box-shadow:0 2px 8px rgba(0,0,0,.07);
+  }
+  thead{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#ffffff}
+  th{padding:.7rem 1rem;text-align:left;font-weight:600}
+  td{padding:.65rem 1rem;background:#ffffff;border:1px solid #e0e7ff}
+  tbody tr:last-child td{border-bottom:none}
+
+  /* Code blocks */
+  pre{
+    margin:1rem 0;
+    border-radius:10px;
+    overflow-x:auto;
+    background:#1e1b4b;
+    border:1px solid #312e81;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+  }
+  pre code{
+    display:block;
+    padding:1.1rem 1.2rem;
+    font-size:13px;
+    line-height:1.7;
+    font-family:"JetBrains Mono","Fira Code",monospace;
+    color:#c7d2fe;
+  }
+  pre code.ascii{
+    background:#1e1b4b;
+    color:#c7d2fe;
+    white-space:pre;
+  }
+  pre code.hljs{border-radius:10px;background:#1e1b4b}
+
+  /* Tip boxes (blockquote) */
+  .tip{
+    background:linear-gradient(135deg,#eef2ff 0%,#f5f3ff 100%);
+    border:2px solid #7c3aed;
+    border-radius:12px;
+    padding:1rem 1.3rem;
+    margin:1rem 0;
+    font-size:.92rem;
+    line-height:1.85;
+    color:#4c1d95;
+  }
+  .tip strong{color:#7c3aed;font-weight:700}
+
+  /* Footer */
+  .footer{
+    text-align:center;
+    padding:2rem 1rem;
+    font-size:.82rem;
+    color:#6b7280;
+    border-top:1px solid #c7d2fe;
+    margin-top:2rem;
+  }
+
+  /* Floating TOC */
+  .toc{
+    position:fixed;
+    right:2rem;
+    top:50%;
+    transform:translateY(-50%);
+    background:white;
+    padding:1rem;
+    border-radius:0.75rem;
+    box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);
+    max-height:80vh;
+    overflow-y:auto;
+    z-index:50;
+    width:220px;
+  }
+  .toc h3{font-size:.8rem;color:#312e81;margin-bottom:.5rem;font-weight:700}
+  .toc a{
+    display:block;
+    font-size:.75rem;
+    color:#4f46e5;
+    text-decoration:none;
+    padding:.25rem 0;
+    line-height:1.5;
+    border-bottom:1px solid #eef2ff;
+  }
+  .toc a:hover{color:#7c3aed}
+  @media(max-width:1280px){
+    .toc{display:none}
+  }
+
+  @media(max-width:600px){
+    .header h1{font-size:1.25rem}
+    .bubble .text{max-width:90%;font-size:.9rem;padding:.7rem .9rem}
+    .avatar-ganesha{width:56px;height:56px}
+    .avatar-natsuki{width:48px;height:48px}
+    h2{font-size:1.15rem}
+    pre code{font-size:11px;padding:.8rem .9rem}
+    table{font-size:.82rem}
+    th,td{padding:.5rem .7rem}
+  }
+</style>
+</head>
+<body>
+
+<!-- Floating TOC -->
+<nav class="toc">
+  <h3>目次</h3>
+  <a href="#sec-intro">導入 — 家を建てるのに何が必要？</a>
+  <a href="#sec-three">まず覚える3つ</a>
+  <a href="#sec-database">ファイル① database.py</a>
+  <a href="#sec-models">ファイル② models/tag.py</a>
+  <a href="#sec-init">ファイル③ init_database.py</a>
+  <a href="#sec-flow">テーブルが作られるまでの全体の流れ</a>
+  <a href="#sec-add">新しいテーブルを追加するときの流れ</a>
+  <a href="#sec-grow">テーブルが増えていくイメージ</a>
+  <a href="#sec-summary">まとめ</a>
+</nav>
+
+<div class="header">
+  <h1>FastAPIプロジェクトのDB関連ファイル<br>— 役割と流れ</h1>
+  <div class="subtitle">ガネーシャ × ナツキ の対話式レクチャー</div>
+</div>
+
+<div class="container">
+
+<div class="conclusion-box">
+  <strong>結論:</strong> データベースのテーブルが作られるまでには「設定」「設計図」「実行」の3ファイルが連携している。<br>
+  <code>database.py</code>（接続設定）→ <code>models/tag.py</code>（テーブルの設計図）→ <code>init_database.py</code>（テーブル作成の実行）。<br>
+  そして <strong>「ファイルを作る＋Baseを継承する＋インポートする」の3点セットで初めてテーブルが作られる。</strong>
+</div>
+
+<hr>
+
+<!-- ====== 導入 ====== -->
+<h2 id="sec-intro">導入 — 「家を建てるのに何が必要？」</h2>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">ええか、ナツキ。今日はデータベース関連のファイルについて教えたるわ</div></div>
+<div class="bubble natsuki"><img src="images/natsuki.png" alt="ナツキ" class="avatar-natsuki"><div class="text">database.pyとかmodelsとか色々あって、正直どれが何してるのかよくわかんないんですよね…</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">せやろな。ほんなら <strong>家を建てる</strong> のに置き換えて考えてみ？</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-疑問.png" alt="ナツキ" class="avatar-natsuki"><div class="text">家を建てる…ですか？</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">そや！家を建てるには3つ必要やろ？ こういうことや</div></div>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>家を建てるとき</th><th>FastAPIプロジェクト</th><th>ファイル</th></tr></thead>
+<tbody>
+<tr><td><strong>土地と住所を決める</strong></td><td>どのDBに、どう接続するか決める</td><td><code>database.py</code></td></tr>
+<tr><td><strong>設計図を描く</strong></td><td>テーブルの列や型を定義する</td><td><code>models/tag.py</code></td></tr>
+<tr><td><strong>工事を実行する</strong></td><td>テーブルを実際に作る</td><td><code>init_database.py</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="bubble ganesha"><img src="images/ganesha-得意げ.png" alt="ガネーシャ（得意げ）" class="avatar-ganesha"><div class="text">土地も決めんと設計図だけ描いても家は建たんし、設計図なしに工事もできひん。<strong>3つセットで初めて動く</strong>んや</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-笑顔.png" alt="ナツキ" class="avatar-natsuki"><div class="text">あ、なるほど！それぞれが別の役割を持ってるんですね</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">さすガネーシャや！ ワシの説明、わかりやすいやろ？</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-呆れ.png" alt="ナツキ" class="avatar-natsuki"><div class="text">…自分で言いますか。で、具体的にはどうなってるんですか？</div></div>
+
+<hr>
+
+<!-- ====== まず覚える3つ ====== -->
+<h2 id="sec-three">まず覚える3つ</h2>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">まずこの3つだけ覚えたらOKや。全体の中での位置づけを見てみ</div></div>
+
+<pre><code class="ascii">┌─────────────────────────────────────────────┐
+│           FastAPIプロジェクト全体              │
+│                                             │
+│   ① database.py        ← 接続設定           │
+│     │                                       │
+│     ├─ Base（設計図の親）を作る               │
+│     ├─ engine（DBへの通り道）を作る           │
+│     └─ session（会話の窓口）を作る            │
+│                                             │
+│   ② models/tag.py      ← テーブルの設計図    │
+│     │                                       │
+│     └─ Baseを継承して Tag クラスを定義        │
+│                                             │
+│   ③ init_database.py   ← テーブル作成の実行   │
+│     │                                       │
+│     ├─ Tag をインポート（ここが超重要！）      │
+│     └─ Base.metadata.create_all で作成       │
+│                                             │
+└─────────────────────────────────────────────┘</code></pre>
+
+<div class="bubble natsuki"><img src="images/natsuki.png" alt="ナツキ" class="avatar-natsuki"><div class="text">①で準備して、②で設計して、③で実行する…って流れですね</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">そういうことや！ほなら1つずつ見ていこか</div></div>
+
+<hr>
+
+<!-- ====== ファイル① database.py ====== -->
+<h2 id="sec-database">ファイル① database.py — 「どのDBに、どうやって接続するか」</h2>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">まず <code>database.py</code> や。これは <strong>DB接続の設定ファイル</strong> やで</div></div>
+<div class="bubble natsuki"><img src="images/natsuki.png" alt="ナツキ" class="avatar-natsuki"><div class="text">設定ファイル…？</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">例えるなら <strong>スマホのWi-Fi設定画面</strong> みたいなもんや。「どのWi-Fiに繋ぐか」「パスワードは何か」を設定するやろ？</div></div>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Wi-Fi設定</th><th>database.py</th></tr></thead>
+<tbody>
+<tr><td>接続先のWi-Fi名</td><td><code>DATABASE_URL</code>（どのDBファイルに繋ぐか）</td></tr>
+<tr><td>パスワード</td><td>接続方式（<code>sqlite+aiosqlite:///</code>）</td></tr>
+<tr><td>Wi-Fiアンテナ</td><td><code>engine</code>（DBへの通り道）</td></tr>
+<tr><td>ネットで会話する</td><td><code>async_session</code>（DBとやり取りする窓口）</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">ほんで、もう1つ超大事なもんがあるねん。<strong>Base</strong> や</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-疑問.png" alt="ナツキ" class="avatar-natsuki"><div class="text">Base…？</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text"><strong>Base</strong>は「設計図の親」みたいなもんや。これから作るテーブルの設計図は、全部このBaseを継承して作るんやで</div></div>
+
+<div class="tip">
+<strong>「Base（ベース）」とは？</strong><br>
+テーブルの設計図（モデル）を作るための<strong>土台</strong>のこと。<br>
+「うちのプロジェクトのテーブルは全部ここから生まれますよ」という<strong>親クラス</strong>です。<br>
+Baseは自分の子供（＝テーブルの設計図）を全部覚えていて、後で「全部まとめて作って！」と命令できます。
+</div>
+
+<div class="tip">
+<strong>「declarative_base()」とは？</strong><br>
+「設計図の親」を1つ作るための<strong>おまじない</strong>みたいな関数。<br>
+これを1回呼ぶと、Base（親）が生まれる。以降、全てのテーブル設計図はこのBaseを継承して作ります。
+</div>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">ほな、実際のコードを見てみよか</div></div>
+
+<pre><code class="language-python"># database.py — DB接続の設定ファイル
+
+import os
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+# ① 設計図の親を作る（全テーブルの土台）
+Base = declarative_base()
+
+# ② 接続先を決める（このプロジェクトではSQLiteファイル）
+base_dir = os.path.dirname(__file__)
+DATABASE_URL = 'sqlite+aiosqlite:///' + os.path.join(base_dir, 'tagdb.sqlite')
+
+# ③ DBへの通り道を作る
+engine = create_async_engine(DATABASE_URL, echo=True)
+
+# ④ DBとやり取りする窓口を作る
+async_session = sessionmaker(
+    engine,
+    expire_on_commit=False,
+    class_=AsyncSession
+)
+
+# ⑤ 実際にDBセッションを取得する関数
+async def get_dbsession():
+    async with async_session() as session:
+        yield session</code></pre>
+
+<div class="bubble natsuki"><img src="images/natsuki-疑問.png" alt="ナツキ" class="avatar-natsuki"><div class="text"><code>sessionmaker</code> って何ですか？あと <code>yield</code> も気になる…</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text"><code>sessionmaker</code> は <strong>セッション（DBとの会話）を作る工場</strong> みたいなもんや。DBに何か聞いたり書いたりするたびに、ここからセッションを1個もらうんやで</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text"><code>yield</code> は <strong>「使い終わったら自動で片付けてくれる」</strong> 仕組みや。DBとの会話が終わったら、接続を自動で閉じてくれるから便利やねん</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-笑顔.png" alt="ナツキ" class="avatar-natsuki"><div class="text">なるほど！後片付けまで面倒見てくれるんですね</div></div>
+
+<div class="bubble natsuki"><img src="images/natsuki.png" alt="ナツキ" class="avatar-natsuki"><div class="text">コードの中に①〜⑤まで役割があるんですね。でも <code>echo=True</code> って何ですか？</div></div>
+<div class="bubble ganesha"><img src="images/ganesha-ボケをかます.png" alt="ガネーシャ（ボケをかます）" class="avatar-ganesha"><div class="text">ええ質問やな！<code>echo=True</code> は <strong>DBとのやり取りを全部ターミナルに表示する</strong> 設定や。開発中は超便利やで。裏で何やってるか丸見えになるからな</div></div>
+<div class="bubble natsuki"><img src="images/natsuki.png" alt="ナツキ" class="avatar-natsuki"><div class="text">デバッグ用ってことですね</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">そや。本番では <code>False</code> にするのが普通やけどな。ワシの教え子の <strong>ザッカーバーグくん</strong> もな、Facebookの開発初期はログ全部出してたって言うてたわ</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-呆れ.png" alt="ナツキ" class="avatar-natsuki"><div class="text">…本当ですか、それ？</div></div>
+
+<hr>
+
+<!-- ====== ファイル② models/tag.py ====== -->
+<h2 id="sec-models">ファイル② models/tag.py — 「テーブルの設計図」</h2>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">次は <code>models/tag.py</code> や。これは <strong>テーブルの設計図</strong> やで</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-疑問.png" alt="ナツキ" class="avatar-natsuki"><div class="text">設計図っていうのは…？</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">例えるなら <strong>Excelの表のテンプレート</strong> みたいなもんや。「この表には何列あって、それぞれどんな種類のデータが入るか」を決めるやろ？</div></div>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Excelのテンプレート</th><th>models/tag.py</th></tr></thead>
+<tbody>
+<tr><td>シート名</td><td><code>__tablename__ = "tags"</code></td></tr>
+<tr><td>番号列（自動連番）</td><td><code>tag_id = Column(Integer, primary_key=True)</code></td></tr>
+<tr><td>タイトル列</td><td><code>title = Column(String(50), nullable=False)</code></td></tr>
+<tr><td>作成日列</td><td><code>created_at = Column(DateTime, ...)</code></td></tr>
+<tr><td>更新日列</td><td><code>updated_at = Column(DateTime)</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">ポイントは <strong>Baseを継承している</strong> ことやで。<code>class Tag(Base):</code> ← ここが超重要！</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-疑問.png" alt="ナツキ" class="avatar-natsuki"><div class="text">継承すると何が起きるんですか？</div></div>
+<div class="bubble ganesha"><img src="images/ganesha-得意げ.png" alt="ガネーシャ（得意げ）" class="avatar-ganesha"><div class="text">めっちゃええ質問やな！Baseを継承した瞬間、Baseが <strong>「あ、tagsっていうテーブルの設計図ができたな」</strong> って自動的に覚えるんや</div></div>
+
+<pre><code class="ascii">Base = declarative_base()
+  │
+  │  ← 「ワシが設計図の親やで」
+  │
+  ├── class Tag(Base):        ← Baseが「tagsテーブル」を記憶！
+  │     __tablename__ = "tags"
+  │
+  ├── class Recipe(Base):     ← Baseが「recipesテーブル」も記憶！
+  │     __tablename__ = "recipes"
+  │
+  └── （他にも増やせる）       ← 全部Baseが覚えてる</code></pre>
+
+<div class="bubble natsuki"><img src="images/natsuki-笑顔.png" alt="ナツキ" class="avatar-natsuki"><div class="text">へぇ〜！Baseが自分の子供を全部覚えてるってことですね</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">そういうことや！ほんで実際のコードはこうなっとる</div></div>
+
+<pre><code class="language-python"># models/tag.py — テーブルの設計図
+
+from sqlalchemy import Column, Integer, String, DateTime
+from database import Base  # ← database.pyからBaseを借りてくる
+from datetime import datetime
+
+class Tag(Base):
+    __tablename__ = "tags"  # ← 実際のテーブル名
+
+    tag_id = Column(Integer, primary_key=True, autoincrement=True)
+    #        ↑ 整数型    ↑ 主キー（一意のID）  ↑ 自動で1,2,3...と増える
+
+    title = Column(String(50), nullable=False)
+    #       ↑ 文字列型（50文字まで）  ↑ 空っぽはダメ！
+
+    created_at = Column(DateTime, default=datetime.now())
+    #           ↑ 日時型        ↑ 何も指定しなければ「今」が入る
+
+    updated_at = Column(DateTime)
+    #           ↑ 更新日。最初はなし（None）</code></pre>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">これで「tagsっていうテーブルには4つの列があるで」っていう設計図ができたわけや</div></div>
+<div class="bubble natsuki"><img src="images/natsuki.png" alt="ナツキ" class="avatar-natsuki"><div class="text"><code>from database import Base</code> で、さっきのdatabase.pyからBaseを借りてきてるんですね</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">そや！ここで <strong>つながり</strong> ができるんや。database.pyで作ったBaseを、models/tag.pyで使う。この関係が大事やで</div></div>
+
+<hr>
+
+<!-- ====== ファイル③ init_database.py ====== -->
+<h2 id="sec-init">ファイル③ init_database.py — 「テーブル作成の実行」</h2>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">最後は <code>init_database.py</code> や。これが <strong>実際にテーブルを作る実行スクリプト</strong> やで</div></div>
+<div class="bubble natsuki"><img src="images/natsuki.png" alt="ナツキ" class="avatar-natsuki"><div class="text">設計図があるだけじゃダメなんですか？</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">当たり前やがな！設計図描いただけで家が建つか？ <strong>工事する人</strong> がおらなアカンやろ</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-笑顔.png" alt="ナツキ" class="avatar-natsuki"><div class="text">あ、そうか！設計図をもとに実際に建てる人が必要なんですね</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">そや！ほんで、ここで <strong>めちゃくちゃ重要なポイント</strong> があるねん</div></div>
+
+<div class="tip">
+<strong>超重要: <code>create_all</code> は「Pythonにインポートされたモデル」だけを検知する</strong><br>
+ファイルを作っただけではダメ！<br>
+<code>init_database.py</code> の中で <code>from models.tag import Tag</code> と<strong>インポートして初めて</strong>、<br>
+Baseが「tagsテーブルを作らなあかんな」と認識します。
+</div>
+
+<div class="tip">
+<strong>「metadata（メタデータ）」とは？</strong><br>
+Baseが持っている <strong>「設計図リスト」</strong> のこと。<br>
+Baseを継承したクラスが作られるたびに、このリストに自動で追加されます。<br>
+<code>create_all</code> はこのリストを見て「どのテーブルを作ればいいか」を判断します。
+</div>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">ここ、マジで大事やから、もう一回たとえ話するで</div></div>
+<div class="bubble natsuki"><img src="images/natsuki.png" alt="ナツキ" class="avatar-natsuki"><div class="text">お願いします！</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text"><strong>工事現場の朝礼</strong> を想像してみ？</div></div>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>工事現場の朝礼</th><th>init_database.py</th></tr></thead>
+<tbody>
+<tr><td>現場監督が集合をかける</td><td><code>init_database.py</code> を実行する</td></tr>
+<tr><td>設計図を持ってきた人だけが参加できる</td><td><strong>インポートされたモデルだけ</strong> が対象</td></tr>
+<tr><td>「Aさんの設計図」を受け取る</td><td><code>from models.tag import Tag</code></td></tr>
+<tr><td>「Bさんの設計図」も受け取る</td><td><code>from models.recipe import Recipe</code></td></tr>
+<tr><td>「全員分の設計図で工事開始！」</td><td><code>Base.metadata.create_all</code></td></tr>
+<tr><td>設計図を持ってこなかった人は無視される</td><td>インポートしてないモデルは作られない！</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="bubble natsuki"><img src="images/natsuki-感動.png" alt="ナツキ" class="avatar-natsuki"><div class="text">あ〜〜！だから <code>import Tag</code> が必要なんですね！設計図を「持ってくる」行為がインポートなんだ！</div></div>
+<div class="bubble ganesha"><img src="images/ganesha-得意げ.png" alt="ガネーシャ（得意げ）" class="avatar-ganesha"><div class="text">さすガネーシャや！ ええ教え方やろ？</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-呆れ.png" alt="ナツキ" class="avatar-natsuki"><div class="text">…自画自賛はいいので、コード見せてください</div></div>
+
+<pre><code class="language-python"># init_database.py — テーブル作成の実行スクリプト
+
+import os
+from sqlalchemy.ext.asyncio import create_async_engine
+from database import Base
+from models.tag import Tag  # ← ★このインポートが超重要！★
+import asyncio
+# ↑ Tagをインポートした瞬間、Baseが「tagsテーブル作るで」と記憶する
+
+base_dir = os.path.dirname(__file__)
+DATABASE_URL = 'sqlite+aiosqlite:///' + os.path.join(base_dir, 'tagdb.sqlite')
+
+engine = create_async_engine(DATABASE_URL, echo=True)
+
+async def init_db():
+    print("=== データベースの初期化を開始 ===")
+    async with engine.begin() as conn:
+        # 既存テーブルを全部消す（開発中のリセット用）
+        await conn.run_sync(Base.metadata.drop_all)
+        print(">>> 既存のテーブルを削除しました。")
+
+        # Baseが覚えている設計図を全部テーブルにする
+        await conn.run_sync(Base.metadata.create_all)
+        print(">>> 新しいテーブルを作成しました。")
+
+if __name__ == "__main__":
+    asyncio.run(init_db())</code></pre>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text"><code>if __name__ == "__main__":</code> は <strong>「このファイルを直接実行したときだけ動く」</strong> って意味や。ターミナルで <code>python init_database.py</code> って打つと動くで</div></div>
+
+<hr>
+
+<!-- ====== 全体の流れ ====== -->
+<h2 id="sec-flow">テーブルが作られるまでの全体の流れ</h2>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">ほな、3つのファイルがどう連携してテーブルが作られるか、流れを見てみよか</div></div>
+
+<pre><code class="ascii">【ステップ1】database.py が読み込まれる
+┌──────────────────────────────────┐
+│  Base = declarative_base()       │
+│  engine = create_async_engine()  │
+│                                  │
+│  Base:「ワシが設計図の親や。     │
+│        まだ子供はおらんで」       │
+└──────────────────────────────────┘
+              │
+              ▼
+【ステップ2】from models.tag import Tag が実行される
+┌──────────────────────────────────┐
+│  class Tag(Base):                │
+│      __tablename__ = "tags"      │
+│                                  │
+│  Base:「お！tagsの設計図が来た。 │
+│        覚えたで！」              │
+└──────────────────────────────────┘
+              │
+              ▼
+【ステップ3】Base.metadata.create_all が実行される
+┌──────────────────────────────────┐
+│  await conn.run_sync(            │
+│      Base.metadata.create_all    │
+│  )                               │
+│                                  │
+│  Base:「覚えてる設計図、全部     │
+│        テーブルにするで！」       │
+│                                  │
+│  → tagsテーブルが作られる！      │
+└──────────────────────────────────┘</code></pre>
+
+<div class="bubble natsuki"><img src="images/natsuki-笑顔.png" alt="ナツキ" class="avatar-natsuki"><div class="text">Baseがずっと主役みたいな感じですね！設計図を受け取って、最後にまとめて作る</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">その通りや！Baseは <strong>設計図の管理人</strong> みたいなもんやな</div></div>
+
+<hr>
+
+<!-- ====== 新しいテーブルを追加 ====== -->
+<h2 id="sec-add">新しいテーブルを追加するときの流れ</h2>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">ほんなら、例えば <strong>recipesテーブル</strong> を追加したいとき、どうするか教えたるわ</div></div>
+<div class="bubble natsuki"><img src="images/natsuki.png" alt="ナツキ" class="avatar-natsuki"><div class="text">はい！知りたいです</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">4ステップや</div></div>
+
+<pre><code class="ascii">【新しいテーブルを追加する4ステップ】
+
+Step 1: models/ にファイルを作る
+         → models/recipe.py を新規作成
+
+Step 2: Baseを継承したクラスを書く
+         → class Recipe(Base): ...
+
+Step 3: init_database.py でインポートする
+         → from models.recipe import Recipe  ← これを追加！
+
+Step 4: init_database.py を実行する
+         → python init_database.py</code></pre>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">ここで <strong>よくあるミス</strong> を教えたるわ。ワシの教え子の <strong>ラリー・ペイジくん</strong> も同じミスしてたで</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-呆れ.png" alt="ナツキ" class="avatar-natsuki"><div class="text">Googleの創業者がそのミスしてるわけないでしょ…</div></div>
+<div class="bubble ganesha"><img src="images/ganesha-誤魔化し.png" alt="ガネーシャ（誤魔化し）" class="avatar-ganesha"><div class="text">ま、まぁ細かいことはええやんけ！大事なのはミスの内容や</div></div>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>よくあるミス</th><th>なぜダメか</th><th>正しいやり方</th></tr></thead>
+<tbody>
+<tr><td>models/にファイルを作っただけ</td><td>Baseが設計図を知らない</td><td>Baseを継承したクラスを書く</td></tr>
+<tr><td>クラスは書いたがインポートしてない</td><td>create_allが検知できない</td><td>init_database.pyでインポートする</td></tr>
+<tr><td>インポートしたが実行してない</td><td>テーブルはまだ存在しない</td><td><code>python init_database.py</code> を実行</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">つまり <strong>3点セット</strong> が揃って初めてテーブルが作られるんや</div></div>
+
+<pre><code class="ascii">┌─────────────────────────────────────────────────────┐
+│                                                     │
+│   テーブルが作られる条件（3点セット）                  │
+│                                                     │
+│   ✅ ファイルを作る     → models/recipe.py           │
+│           +                                         │
+│   ✅ Baseを継承する     → class Recipe(Base):        │
+│           +                                         │
+│   ✅ インポートする     → from models.recipe import  │
+│                                                     │
+│   → この3つが揃うと create_all がテーブルを作る      │
+│                                                     │
+└─────────────────────────────────────────────────────┘</code></pre>
+
+<div class="bubble natsuki"><img src="images/natsuki-感動.png" alt="ナツキ" class="avatar-natsuki"><div class="text"><strong>ファイル＋継承＋インポート</strong>！この3点セット、覚えました！</div></div>
+
+<hr>
+
+<!-- ====== テーブルが増えていくイメージ ====== -->
+<h2 id="sec-grow">テーブルが増えていくイメージ</h2>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">最後に、テーブルが増えていくイメージを見せたるわ</div></div>
+<div class="bubble natsuki"><img src="images/natsuki.png" alt="ナツキ" class="avatar-natsuki"><div class="text">お願いします！</div></div>
+
+<pre><code class="language-python">【init_database.py のインポート部分】
+
+from database import Base
+from models.tag import Tag          # ← Baseに "tags" が登録される
+from models.recipe import Recipe    # ← Baseに "recipes" も登録される
+from models.user import User        # ← Baseに "users" も登録される
+
+# この時点でBaseが覚えている設計図:
+#   Base.metadata = {
+#     "tags":    Tag の設計図,
+#     "recipes": Recipe の設計図,
+#     "users":   User の設計図,
+#   }
+
+# ↓ 覚えてる設計図を全部テーブルにする！
+await conn.run_sync(Base.metadata.create_all)
+
+# 結果:
+#   tagsテーブル    → 作成完了 ✅
+#   recipesテーブル → 作成完了 ✅
+#   usersテーブル   → 作成完了 ✅</code></pre>
+
+<div class="bubble ganesha"><img src="images/ganesha-得意げ.png" alt="ガネーシャ（得意げ）" class="avatar-ganesha"><div class="text">インポートの数だけテーブルが増えるわけや。シンプルやろ？</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-笑顔.png" alt="ナツキ" class="avatar-natsuki"><div class="text">めっちゃわかりやすい！インポートが「設計図を持ってくる」行為で、create_allが「まとめて建設する」ってことですね</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">完璧や！</div></div>
+
+<hr>
+
+<!-- ====== まとめ ====== -->
+<h2 id="sec-summary">まとめ — 3つのファイルの役割</h2>
+
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">ほな、最後にまとめるで</div></div>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>ファイル</th><th>役割</th><th>一言で言うと</th></tr></thead>
+<tbody>
+<tr><td><code>database.py</code></td><td>DB接続設定＋Baseを作る</td><td>土地と住所を決める人</td></tr>
+<tr><td><code>models/tag.py</code></td><td>テーブルの列と型を定義</td><td>設計図を描く人</td></tr>
+<tr><td><code>init_database.py</code></td><td>テーブルを実際に作る</td><td>工事を実行する人</td></tr>
+</tbody>
+</table>
+</div>
+
+<pre><code class="ascii">database.py           models/tag.py        init_database.py
+ (設定)                 (設計図)              (実行)
+┌────────┐           ┌────────────┐        ┌──────────────┐
+│ Base   │──継承──→ │ class Tag  │──import→│ create_all   │
+│ engine │           │ (Base)     │        │ でテーブル    │
+│ session│           │ tag_id     │        │ 作成！        │
+└────────┘           │ title      │        └──────────────┘
+                     │ created_at │
+                     │ updated_at │
+                     └────────────┘</code></pre>
+
+<div class="bubble natsuki"><img src="images/natsuki-笑顔.png" alt="ナツキ" class="avatar-natsuki"><div class="text">3つのファイルの役割と、テーブルが作られるまでの流れ、バッチリわかりました！</div></div>
+<div class="bubble ganesha"><img src="images/ganesha.png" alt="ガネーシャ" class="avatar-ganesha"><div class="text">ええか、最後にもう一回言うとくで。<strong>ファイルを作る＋Baseを継承する＋インポートする。この3点セットを忘れたらアカンで！</strong></div></div>
+<div class="bubble natsuki"><img src="images/natsuki.png" alt="ナツキ" class="avatar-natsuki"><div class="text">はい！新しいテーブルを追加するときは3点セットですね</div></div>
+<div class="bubble ganesha"><img src="images/ganesha-ボケをかます.png" alt="ガネーシャ（ボケをかます）" class="avatar-ganesha"><div class="text">ちなみにワシへのお供えもんも3点セットでお願いしたいんやけどな。あんみつと、あんみつと、あんみつや</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-怒る.png" alt="ナツキ" class="avatar-natsuki"><div class="text">全部あんみつじゃないですか！</div></div>
+<div class="bubble ganesha"><img src="images/ganesha-誤魔化し.png" alt="ガネーシャ（誤魔化し）" class="avatar-ganesha"><div class="text">ま、まぁ細かいことはええやんけ…！</div></div>
+<div class="bubble ganesha"><img src="images/ganesha-得意げ.png" alt="ガネーシャ（得意げ）" class="avatar-ganesha"><div class="text">さすガネーシャや！ 今日もええ授業やったな</div></div>
+<div class="bubble natsuki"><img src="images/natsuki-呆れ.png" alt="ナツキ" class="avatar-natsuki"><div class="text">…自分で言うスタイル、ほんとにブレないですね</div></div>
+<div class="bubble ganesha"><img src="images/ganesha-決めポーズ.png" alt="ガネーシャ（決めポーズ）" class="avatar-ganesha"><div class="text">はい、Oh, My God!!</div></div>
+
+</div>
+
+<div class="footer">
+  ガネーシャ × ナツキ の対話式レクチャー | FastAPI DB関連ファイル講座 | 2026-04-07
+</div>
+
+<script>hljs.highlightAll();</script>
+</body>
+</html>

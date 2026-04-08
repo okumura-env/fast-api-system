@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow">
+  <meta property="og:title" content="スキーマ（Pydantic BaseModel）ってなんやねん？📋">
+  <meta property="og:description" content="FastAPIのスキーマ（Pydantic BaseModel）の役割と使い分けを、ガネーシャとナツキの対話で学ぶ">
+  <meta property="og:type" content="article">
+  <title>スキーマ（Pydantic BaseModel）ってなんやねん？📋</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23FFFFFF'/><rect x='8' y='8' width='84' height='84' rx='14' fill='none' stroke='%234f46e5' stroke-width='4'/><circle cx='50' cy='45' r='18' fill='%23f59e0b' opacity='0.8'/><rect x='25' y='70' width='50' height='6' rx='3' fill='%2394A3B8' opacity='0.6'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gv: {
+              bg: '#f0f4ff',
+              surface: '#ffffff',
+              border: '#e0e7ff',
+              primary: '#4f46e5',
+              secondary: '#7c3aed',
+              accent: '#6366f1',
+              text: '#374151',
+              heading: '#312e81',
+              muted: '#6b7280',
+              dim: '#9ca3af',
+              code: '#1e1b4b',
+              ganesha: '#f59e0b',
+              natsuki: '#818cf8',
+              positive: '#10b981',
+              negative: '#ef4444',
+              warning: '#f59e0b',
+              quote: '#4c1d95',
+            }
+          },
+          fontFamily: {
+            sans: ['"Noto Sans JP"', '"Hiragino Sans"', '"Hiragino Kaku Gothic ProN"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f0f4ff 0%, #f5f0ff 50%, #eef2ff 100%);
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { border-top: none !important; background: white !important; }
+      .rounded-xl, .rounded-2xl { break-inside: avoid; }
+      .md\:flex-row { flex-direction: row !important; }
+      .md\:hidden { display: none !important; }
+      .hidden.md\:block { display: block !important; }
+      .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    }
+    .toc {
+      position: fixed;
+      right: 2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: white;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 50;
+    }
+    @media (max-width: 1280px) {
+      .toc { display: none; }
+    }
+    .toc a {
+      display: block;
+      padding: 0.375rem 0.75rem;
+      color: #6b7280;
+      text-decoration: none;
+      font-size: 0.875rem;
+      border-radius: 0.375rem;
+      transition: all 0.2s;
+    }
+    .toc a:hover {
+      color: #4f46e5;
+      background: #eef2ff;
+    }
+  </style>
+</head>
+<body class="text-gv-text antialiased leading-relaxed min-h-screen">
+  <div class="no-print max-w-[880px] mx-auto px-6 pt-2 flex justify-end">
+    <button onclick="window.print()" class="flex items-center gap-1.5 text-xs text-gv-dim hover:text-gv-primary transition-colors cursor-pointer">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      PDF
+    </button>
+  </div>
+  <main class="max-w-[880px] mx-auto px-6 py-8">
+<!-- CONTENT_START -->
+
+<!-- ヘッダー -->
+<div class="bg-gradient-to-r from-gv-primary to-gv-secondary rounded-2xl p-8 mb-8 text-white">
+  <h1 class="text-3xl md:text-4xl font-black leading-tight">スキーマ（Pydantic BaseModel）ってなんやねん？📋</h1>
+  <p class="mt-3 text-white/70 text-sm">ガネーシャ×ナツキの対話で学ぶ、FastAPIのデータ定義</p>
+</div>
+
+<!-- 結論ボックス -->
+<div class="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-gv-secondary rounded-xl p-5 my-8" id="conclusion">
+  <p class="text-gv-quote text-lg font-bold leading-relaxed">
+    <i data-lucide="quote" class="w-5 h-5 inline-block mr-1 text-gv-secondary"></i>
+    スキーマとは「データの形を定義する契約書」や。入力（リクエスト）と出力（レスポンス）でデータの形が違うから、場面ごとにスキーマを分けるんや。「何を受け取って、何を返すか」をハッキリさせることで、APIは安全で分かりやすくなる。
+  </p>
+</div>
+
+<!-- セクション1: 導入 -->
+<div class="bg-white rounded-2xl shadow-sm border border-gv-border p-8 mb-8" id="intro">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+      <i data-lucide="help-circle" class="w-6 h-6 text-amber-600"></i>
+    </div>
+    <div>
+      <h2 class="text-2xl font-bold text-gv-heading">導入：スキーマってなんやねん？</h2>
+      <p class="text-gv-muted">まずは身近なたとえで理解しよう</p>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mb-6">
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">ええか、ナツキ。今日はな、FastAPIの<strong class="text-gv-secondary font-bold">スキーマ</strong>について教えたるわ</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-疑問.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">スキーマ…？なんか難しそうな名前ですね</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">難しそうに聞こえるやろ？けどな、めっちゃ身近なもんなんや。<strong class="text-gv-secondary font-bold">役所の申込用紙</strong>を想像してみ？</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- たとえ話ボックス -->
+  <div class="bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-xl border border-amber-200 my-6">
+    <div class="flex items-center gap-2 mb-3">
+      <i data-lucide="building-2" class="w-6 h-6 text-amber-600"></i>
+      <span class="font-bold text-amber-800">たとえ話：役所の申込用紙</span>
+    </div>
+    <div class="space-y-3 text-gv-text">
+      <p>引っ越しの届出を出しに行くときを想像してみてください。</p>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong>窓口に出す書類</strong>（転入届）→ 名前・住所を書く</li>
+        <li><strong>窓口から返ってくる書類</strong>（受理証明書）→ 名前・住所＋<strong>受付番号</strong>付き</li>
+        <li><strong>処理結果のお知らせ</strong> →「届出を受理しました」の紙</li>
+      </ul>
+      <p class="mt-2 font-bold text-amber-800">出す書類と返ってくる書類、形が違う！</p>
+    </div>
+  </div>
+
+  <!-- テーブル：たとえ→実際のマッピング -->
+  <div class="overflow-x-auto my-6">
+    <table class="w-full text-sm border-collapse">
+      <thead>
+        <tr>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 rounded-tl-xl text-left">場面</th>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 text-center">役所（たとえ）</th>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 rounded-tr-xl text-center">FastAPI（実際）</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gv-border">
+        <tr>
+          <td class="p-3 font-medium text-gv-heading bg-gray-50">窓口に出す書類</td>
+          <td class="p-3 text-center">転入届（名前・住所を書く）</td>
+          <td class="p-3 text-center"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold">リクエストスキーマ</span></td>
+        </tr>
+        <tr>
+          <td class="p-3 font-medium text-gv-heading bg-gray-50">窓口から返ってくる書類</td>
+          <td class="p-3 text-center">受理証明書（名前・住所＋受付番号）</td>
+          <td class="p-3 text-center"><span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-bold">レスポンススキーマ</span></td>
+        </tr>
+        <tr>
+          <td class="p-3 font-medium text-gv-heading bg-gray-50">処理結果のお知らせ</td>
+          <td class="p-3 text-center">「届出を受理しました」の紙</td>
+          <td class="p-3 text-center"><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-bold">メッセージスキーマ</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 対話：納得 -->
+  <div class="space-y-4 mt-6">
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-笑顔.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">あ、確かに！届出には受付番号なんて書かないけど、受理証明書には番号がついてますね</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha-得意げ.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">そういうことや！<strong class="text-gv-secondary font-bold">スキーマ</strong>っちゅうのは、この「書類のフォーマット（形）」を定義したもんなんや</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- セクション2: まず覚える3つ -->
+<div class="bg-white rounded-2xl shadow-sm border border-gv-border p-8 mb-8" id="three-things">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="w-12 h-12 bg-gradient-to-br from-rose-500 to-pink-500 rounded-xl flex items-center justify-center">
+      <i data-lucide="star" class="w-6 h-6 text-white"></i>
+    </div>
+    <div>
+      <h2 class="text-2xl font-bold text-gv-heading">まず覚える3つ</h2>
+      <p class="text-gv-muted">最初はこれだけでOK！</p>
+    </div>
+  </div>
+
+  <div class="grid gap-4">
+    <div class="flex items-start gap-4 p-4 bg-gradient-to-r from-red-50 to-red-100 rounded-xl border-l-4 border-red-500">
+      <div class="w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">1</div>
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="font-bold text-lg text-gv-heading">スキーマ = データの形を定義する契約書</span>
+        </div>
+        <p class="text-gv-text">「この書類にはこの項目が必要です」を定義するもの</p>
+      </div>
+    </div>
+
+    <div class="flex items-start gap-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border-l-4 border-blue-500">
+      <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">2</div>
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="font-bold text-lg text-gv-heading">入力用と出力用でスキーマを分ける</span>
+        </div>
+        <p class="text-gv-text">出す書類と返ってくる書類は形が違う</p>
+      </div>
+    </div>
+
+    <div class="flex items-start gap-4 p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border-l-4 border-green-500">
+      <div class="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">3</div>
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="font-bold text-lg text-gv-heading">継承で共通部分を再利用できる</span>
+        </div>
+        <p class="text-gv-text">親の書類をコピーして項目を追加するイメージ</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- セクション3: スキーマ＝データの契約書 -->
+<div class="bg-white rounded-2xl shadow-sm border border-gv-border p-8 mb-8" id="contract">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+      <i data-lucide="file-text" class="w-6 h-6 text-gv-primary"></i>
+    </div>
+    <div>
+      <h2 class="text-2xl font-bold text-gv-heading">スキーマ＝データの契約書</h2>
+      <p class="text-gv-muted">Pydantic BaseModelで作る設計図</p>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mb-6">
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">まずな、<strong class="text-gv-secondary font-bold">スキーマ</strong>っちゅうのは、Pythonでは<strong class="text-gv-secondary font-bold">Pydantic</strong>っていうライブラリの<strong class="text-gv-secondary font-bold">BaseModel</strong>を使って作るんや</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 用語解説ボックス -->
+  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 my-6">
+    <div class="flex items-center gap-2 mb-3">
+      <i data-lucide="lightbulb" class="w-6 h-6 text-yellow-500"></i>
+      <span class="font-bold text-blue-800">「Pydantic（パイダンティック）」とは？</span>
+    </div>
+    <div class="space-y-3 text-gv-text">
+      <p>データの形をチェックしてくれる<strong class="text-gv-secondary font-bold">検査係</strong>のこと。</p>
+      <p>窓口で「この欄が空欄ですよ」「ここは数字を書いてください」と教えてくれる人みたいなもんや。この解説では「<strong class="text-gv-secondary font-bold">データチェック係</strong>」と呼ぶで。</p>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mb-6">
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">つまり、スキーマを定義すると自動でデータをチェックしてくれるってことですか？</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">その通りや！実際のコードを見てみ👇</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- アノテーション付きコード -->
+  <div class="my-6">
+    <div class="flex items-center gap-2 mb-2">
+      <i data-lucide="code" class="w-5 h-5 text-gv-secondary"></i>
+      <span class="font-bold text-gv-heading">このコードがやること</span>
+    </div>
+    <p class="text-gv-text ml-7 mb-4">「タグの登録・更新用の書類フォーマット」を定義しています。titleという項目が必須で、1文字以上の文字列であることをルール化しています。</p>
+    <div class="bg-gv-code rounded-xl overflow-hidden">
+      <div class="p-4 font-mono text-sm leading-loose">
+        <div><span class="text-gray-500">from</span> <span class="text-indigo-200">pydantic</span> <span class="text-gray-500">import</span> <span class="text-indigo-200">BaseModel, Field</span></div>
+        <div class="mt-2"></div>
+        <div>
+          <span class="text-gray-500">class </span>
+          <span class="bg-yellow-500/20 text-yellow-300 px-1 rounded border border-yellow-500/30">InsertAndUpdateTagSchema</span>
+          <span class="text-indigo-200">(</span>
+          <span class="bg-blue-500/20 text-blue-300 px-1 rounded border border-blue-500/30">BaseModel</span>
+          <span class="text-indigo-200">):</span>
+        </div>
+        <div class="ml-8">
+          <span class="bg-green-500/20 text-green-300 px-1 rounded border border-green-500/30">title</span>
+          <span class="text-indigo-200">: </span>
+          <span class="bg-purple-500/20 text-purple-300 px-1 rounded border border-purple-500/30">str</span>
+          <span class="text-indigo-200"> = Field(</span>
+        </div>
+        <div class="ml-16">
+          <span class="bg-red-500/20 text-red-300 px-1 rounded border border-red-500/30">...</span>
+          <span class="text-indigo-200">,</span>
+        </div>
+        <div class="ml-16"><span class="text-indigo-200">description=</span><span class="text-green-300">"タグのタイトルを入力してください。"</span><span class="text-indigo-200">,</span></div>
+        <div class="ml-16"><span class="text-indigo-200">example=</span><span class="text-green-300">"和食"</span><span class="text-indigo-200">,</span></div>
+        <div class="ml-16">
+          <span class="bg-orange-500/20 text-orange-300 px-1 rounded border border-orange-500/30">min_length=1</span>
+        </div>
+        <div class="ml-8"><span class="text-indigo-200">)</span></div>
+      </div>
+    </div>
+    <div class="mt-3 space-y-2">
+      <div class="flex items-start gap-2">
+        <span class="inline-block w-3 h-3 mt-1 bg-yellow-400 rounded-sm flex-shrink-0"></span>
+        <p class="text-sm text-gv-text"><strong>InsertAndUpdateTagSchema</strong> — 「タグ登録・更新用の書類」という名前の設計図。申込用紙のタイトル</p>
+      </div>
+      <div class="flex items-start gap-2">
+        <span class="inline-block w-3 h-3 mt-1 bg-blue-400 rounded-sm flex-shrink-0"></span>
+        <p class="text-sm text-gv-text"><strong>(BaseModel)</strong> — Pydanticの設計図ひな型を使う宣言。「この用紙は公式フォーマットに従います」</p>
+      </div>
+      <div class="flex items-start gap-2">
+        <span class="inline-block w-3 h-3 mt-1 bg-green-400 rounded-sm flex-shrink-0"></span>
+        <p class="text-sm text-gv-text"><strong>title: str</strong> — 「title」という項目は文字列（テキスト）。「名前」欄は文字で書いてね</p>
+      </div>
+      <div class="flex items-start gap-2">
+        <span class="inline-block w-3 h-3 mt-1 bg-purple-400 rounded-sm flex-shrink-0"></span>
+        <p class="text-sm text-gv-text"><strong>str</strong> — 文字列型。数字じゃなくてテキストを受け取る</p>
+      </div>
+      <div class="flex items-start gap-2">
+        <span class="inline-block w-3 h-3 mt-1 bg-red-400 rounded-sm flex-shrink-0"></span>
+        <p class="text-sm text-gv-text"><strong>Field(...)</strong> — この項目は<strong>必須</strong>（省略不可）。「※必ず記入してください」の注意書き</p>
+      </div>
+      <div class="flex items-start gap-2">
+        <span class="inline-block w-3 h-3 mt-1 bg-orange-400 rounded-sm flex-shrink-0"></span>
+        <p class="text-sm text-gv-text"><strong>min_length=1</strong> — 最低1文字は必要。空欄はダメですよ</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mt-6">
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-笑顔.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">おお！<code class="bg-indigo-100 px-1 rounded">Field(...)</code>の<code class="bg-indigo-100 px-1 rounded">...</code>が「必須」って意味なんですね。申込用紙の「※必須」と同じだと思えば簡単です</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha-得意げ.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">せやろ？さすガネーシャや！✨ ワシの教え子のザッカーバーグくんもな、Facebook作るとき「データの形を先に決めるのが大事やで」って言うてたわ</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-呆れ.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">…本当ですか？そのエピソード、毎回盛ってません？</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- セクション4: なぜスキーマを分けるのか？ -->
+<div class="bg-white rounded-2xl shadow-sm border border-gv-border p-8 mb-8" id="why-separate">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+      <i data-lucide="split" class="w-6 h-6 text-purple-600"></i>
+    </div>
+    <div>
+      <h2 class="text-2xl font-bold text-gv-heading">なぜスキーマを分けるのか？</h2>
+      <p class="text-gv-muted">入力と出力で必要なデータが違う</p>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mb-6">
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-疑問.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">確かに、全部同じスキーマじゃダメなんですか？1つで済むなら楽じゃないですか？</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">ええ質問やな。ほな聞くけど、お前が<strong class="text-gv-secondary font-bold">タグを新しく登録する</strong>とき、<strong class="text-gv-secondary font-bold">tag_id</strong>って自分で決めるか？</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">いえ、IDはサーバー側で自動的に振られるものですよね…？</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- シーケンス図：リクエストとレスポンスの違い -->
+  <div class="bg-gray-50 rounded-2xl p-6 md:p-8 my-6">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+        <i data-lucide="arrow-left-right" class="w-5 h-5 text-gv-primary"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-gv-heading">データの流れ</h3>
+        <p class="text-sm text-gv-muted">登録時と取得時で送るデータが違う</p>
+      </div>
+    </div>
+
+    <div class="my-8 overflow-x-auto">
+      <div class="flex justify-between min-w-[400px] mb-2 px-4">
+        <div class="w-28 text-center">
+          <div class="w-14 h-14 bg-blue-100 border-2 border-blue-300 rounded-full flex items-center justify-center mx-auto mb-1">
+            <i data-lucide="monitor" class="w-6 h-6 text-blue-600"></i>
+          </div>
+          <span class="text-sm font-bold text-blue-800">クライアント</span>
+        </div>
+        <div class="w-28 text-center">
+          <div class="w-14 h-14 bg-purple-100 border-2 border-purple-300 rounded-full flex items-center justify-center mx-auto mb-1">
+            <i data-lucide="server" class="w-6 h-6 text-purple-600"></i>
+          </div>
+          <span class="text-sm font-bold text-purple-800">サーバー</span>
+        </div>
+      </div>
+      <div class="relative min-w-[400px] px-4">
+        <div class="absolute left-[calc(25%)] top-0 bottom-0 border-l-2 border-dashed border-blue-200"></div>
+        <div class="absolute left-[calc(75%)] top-0 bottom-0 border-l-2 border-dashed border-purple-200"></div>
+
+        <!-- 登録リクエスト -->
+        <div class="relative py-3">
+          <div class="ml-[25%] mr-[25%] flex items-center">
+            <div class="flex-1 border-t-2 border-blue-400"></div>
+            <i data-lucide="arrow-right" class="w-4 h-4 text-blue-500 -ml-1"></i>
+          </div>
+          <p class="text-xs text-blue-600 text-center font-medium mt-1">① POST: <code class="bg-blue-100 px-1 rounded">{ title: "和食" }</code></p>
+          <p class="text-xs text-blue-400 text-center">titleだけでOK！</p>
+        </div>
+
+        <!-- 登録レスポンス -->
+        <div class="relative py-3">
+          <div class="ml-[25%] mr-[25%] flex items-center flex-row-reverse">
+            <div class="flex-1 border-t-2 border-dashed border-purple-400"></div>
+            <i data-lucide="arrow-left" class="w-4 h-4 text-purple-500 -mr-1"></i>
+          </div>
+          <p class="text-xs text-purple-600 text-center font-medium mt-1">② 応答: <code class="bg-purple-100 px-1 rounded">{ tag_id: 1, title: "和食" }</code></p>
+          <p class="text-xs text-purple-400 text-center">IDがないとどのタグか区別できない！</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mb-6">
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-感動.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">あー！なるほど！<strong class="text-gv-secondary font-bold">データの流れる方向</strong>によって必要な項目が違うんですね！</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">その通りや！整理するとこうなる👇</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- テーブル：スキーマの使い分け -->
+  <div class="overflow-x-auto my-6">
+    <table class="w-full text-sm border-collapse">
+      <thead>
+        <tr>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 rounded-tl-xl text-left">方向</th>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 text-center">場面</th>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 text-center">必要なデータ</th>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 rounded-tr-xl text-center">使うスキーマ</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gv-border">
+        <tr>
+          <td class="p-3 font-medium text-gv-heading bg-gray-50">クライアント → サーバー</td>
+          <td class="p-3 text-center">タグを登録・更新</td>
+          <td class="p-3 text-center">titleだけ</td>
+          <td class="p-3 text-center"><code class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">InsertAndUpdateTagSchema</code></td>
+        </tr>
+        <tr>
+          <td class="p-3 font-medium text-gv-heading bg-gray-50">サーバー → クライアント</td>
+          <td class="p-3 text-center">タグ情報を返す</td>
+          <td class="p-3 text-center">title + tag_id</td>
+          <td class="p-3 text-center"><code class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs font-bold">TagSchema</code></td>
+        </tr>
+        <tr>
+          <td class="p-3 font-medium text-gv-heading bg-gray-50">サーバー → クライアント</td>
+          <td class="p-3 text-center">処理結果を通知</td>
+          <td class="p-3 text-center">messageだけ</td>
+          <td class="p-3 text-center"><code class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold">ResponseSchema</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="space-y-4">
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha-得意げ.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text"><strong class="text-gv-secondary font-bold">入力と出力でデータの形が違う</strong>から、スキーマも分けなアカンのや。<strong class="text-gv-secondary font-bold">場面ごとに最適な形</strong>を用意する。これがスキーマを分ける理由やで</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- セクション5: 継承でスキーマを賢く作る -->
+<div class="bg-white rounded-2xl shadow-sm border border-gv-border p-8 mb-8" id="inheritance">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+      <i data-lucide="git-merge" class="w-6 h-6 text-green-600"></i>
+    </div>
+    <div>
+      <h2 class="text-2xl font-bold text-gv-heading">継承でスキーマを賢く作る</h2>
+      <p class="text-gv-muted">共通部分はコピーして使い回す</p>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mb-6">
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">ほな、実際のスキーマ3つを全部見てみよか👇</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- アノテーション付きコード：3つのスキーマ -->
+  <div class="my-6">
+    <div class="flex items-center gap-2 mb-2">
+      <i data-lucide="code" class="w-5 h-5 text-gv-secondary"></i>
+      <span class="font-bold text-gv-heading">このコードがやること</span>
+    </div>
+    <p class="text-gv-text ml-7 mb-4">3つのスキーマ（書類フォーマット）を定義しています。②は①を継承（コピー）して、tag_idを追加しているのがポイントです。</p>
+
+    <div class="bg-gv-code rounded-xl overflow-hidden">
+      <div class="p-4 font-mono text-sm leading-relaxed">
+        <div class="text-gray-500"># ① リクエスト用（登録・更新のときに受け取るデータ）</div>
+        <div><span class="text-gray-500">class </span><span class="text-yellow-300">InsertAndUpdateTagSchema</span><span class="text-indigo-200">(BaseModel):</span></div>
+        <div class="ml-8"><span class="text-green-300">title</span><span class="text-indigo-200">: str = Field(..., min_length=1)</span></div>
+        <div class="mt-3 text-gray-500"># ② レスポンス用（タグ情報を返すときのデータ）</div>
+        <div><span class="text-gray-500">class </span><span class="text-yellow-300">TagSchema</span><span class="text-indigo-200">(</span><span class="bg-amber-500/20 text-amber-300 px-1 rounded border border-amber-500/30">InsertAndUpdateTagSchema</span><span class="text-indigo-200">):</span> <span class="text-gray-500"># ← ①を継承！</span></div>
+        <div class="ml-8"><span class="text-green-300">tag_id</span><span class="text-indigo-200">: int = Field(...)</span></div>
+        <div class="mt-3 text-gray-500"># ③ メッセージ用（処理結果を返すときのデータ）</div>
+        <div><span class="text-gray-500">class </span><span class="text-yellow-300">ResponseSchema</span><span class="text-indigo-200">(BaseModel):</span></div>
+        <div class="ml-8"><span class="text-green-300">message</span><span class="text-indigo-200">: str = Field(...)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 入れ子ボックス図：継承関係 -->
+  <div class="my-8">
+    <div class="flex items-center gap-2 mb-4">
+      <i data-lucide="git-merge" class="w-5 h-5 text-gv-primary"></i>
+      <span class="font-bold text-gv-heading">継承の関係図</span>
+    </div>
+    <div class="flex flex-col items-center gap-0">
+      <!-- BaseModel -->
+      <div class="w-full max-w-sm bg-gradient-to-r from-gray-100 to-gray-200 border-2 border-gray-300 rounded-t-xl p-4 text-center">
+        <div class="flex items-center justify-center gap-2">
+          <i data-lucide="box" class="w-5 h-5 text-gray-600"></i>
+          <span class="font-bold text-gray-800">BaseModel（ひな型）</span>
+        </div>
+        <p class="text-sm text-gray-600 mt-1">Pydanticの基本機能</p>
+      </div>
+      <div class="py-1"><i data-lucide="arrow-down" class="w-6 h-6 text-gv-dim"></i></div>
+      <!-- 分岐 -->
+      <div class="grid grid-cols-2 gap-4 w-full max-w-lg">
+        <!-- 左: InsertAndUpdateTagSchema → TagSchema -->
+        <div class="flex flex-col items-center gap-0">
+          <div class="w-full bg-gradient-to-r from-blue-100 to-blue-200 border-2 border-blue-300 rounded-xl p-3 text-center">
+            <span class="font-bold text-blue-800 text-sm">InsertAndUpdateTagSchema</span>
+            <p class="text-xs text-blue-600 mt-1">title のみ</p>
+          </div>
+          <div class="py-1"><i data-lucide="arrow-down" class="w-5 h-5 text-gv-dim"></i></div>
+          <div class="text-xs text-gv-muted mb-1">継承</div>
+          <div class="w-full bg-gradient-to-r from-purple-100 to-purple-200 border-2 border-purple-300 rounded-xl p-3 text-center">
+            <span class="font-bold text-purple-800 text-sm">TagSchema</span>
+            <p class="text-xs text-purple-600 mt-1">title（親から引き継ぎ）</p>
+            <p class="text-xs text-purple-600">+ tag_id（追加）</p>
+          </div>
+        </div>
+        <!-- 右: ResponseSchema -->
+        <div class="flex flex-col items-center">
+          <div class="w-full bg-gradient-to-r from-green-100 to-green-200 border-2 border-green-300 rounded-xl p-3 text-center">
+            <span class="font-bold text-green-800 text-sm">ResponseSchema</span>
+            <p class="text-xs text-green-600 mt-1">message のみ</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mb-6">
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-疑問.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text"><strong class="text-gv-secondary font-bold">継承</strong>ってなんですか？<code class="bg-indigo-100 px-1 rounded">TagSchema(InsertAndUpdateTagSchema)</code>の部分ですよね？</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">ええ質問や。<strong class="text-gv-secondary font-bold">継承</strong>ってのはな、<strong class="text-gv-secondary font-bold">親の設計図をまるっとコピーして、さらに項目を追加する</strong>仕組みのことや</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 用語解説ボックス -->
+  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 my-6">
+    <div class="flex items-center gap-2 mb-3">
+      <i data-lucide="lightbulb" class="w-6 h-6 text-yellow-500"></i>
+      <span class="font-bold text-blue-800">「継承」とは？</span>
+    </div>
+    <div class="space-y-3 text-gv-text">
+      <p>親の書類フォーマットを<strong class="text-gv-secondary font-bold">そのまま引き継いで</strong>、新しい項目を追加すること。</p>
+      <p>たとえば、転入届（名前・住所）をコピーして、受理番号欄を追加したら受理証明書になる。ゼロから作り直さなくていいから<strong class="text-gv-secondary font-bold">楽</strong>やし、<strong class="text-gv-secondary font-bold">titleの定義を2回書かなくて済む</strong>。</p>
+    </div>
+  </div>
+
+  <!-- 比較カード -->
+  <div class="grid md:grid-cols-2 gap-4 my-6">
+    <div class="bg-red-50 border border-red-200 rounded-xl p-5">
+      <div class="flex items-center gap-2 mb-3">
+        <i data-lucide="x-circle" class="w-6 h-6 text-gv-negative"></i>
+        <span class="font-bold text-red-800">継承なしの場合</span>
+      </div>
+      <ul class="space-y-2 text-gv-text text-sm">
+        <li>titleの定義を<strong>2回書く</strong></li>
+        <li>修正するとき<strong>2か所</strong>直す</li>
+        <li>書き間違えるリスクあり</li>
+      </ul>
+    </div>
+    <div class="bg-green-50 border border-green-200 rounded-xl p-5">
+      <div class="flex items-center gap-2 mb-3">
+        <i data-lucide="check-circle" class="w-6 h-6 text-gv-positive"></i>
+        <span class="font-bold text-green-800">継承ありの場合</span>
+      </div>
+      <ul class="space-y-2 text-gv-text text-sm">
+        <li>titleの定義は<strong>1回だけ</strong></li>
+        <li>修正するとき<strong>1か所</strong>だけ</li>
+        <li>常に同じ定義が使われる</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4">
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-笑顔.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">あ、つまり<code class="bg-indigo-100 px-1 rounded">TagSchema</code>は<code class="bg-indigo-100 px-1 rounded">InsertAndUpdateTagSchema</code>の<strong class="text-gv-secondary font-bold">title</strong>をそのまま受け継いで、<strong class="text-gv-secondary font-bold">tag_id</strong>だけ追加してるんですね！</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha-ボケをかます.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">Don't Repeat Yourself…<strong class="text-gv-secondary font-bold">同じこと繰り返すな</strong>って意味や。ワシも釈迦に「同じギャグ繰り返すな」って言われたことあるわ</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-呆れ.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">…ガネーシャさんは繰り返しがちですもんね</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- セクション6: エンドポイントでの使い分け -->
+<div class="bg-white rounded-2xl shadow-sm border border-gv-border p-8 mb-8" id="endpoints">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+      <i data-lucide="route" class="w-6 h-6 text-blue-600"></i>
+    </div>
+    <div>
+      <h2 class="text-2xl font-bold text-gv-heading">エンドポイントでの使い分け</h2>
+      <p class="text-gv-muted">APIの窓口ごとにスキーマを使い分ける</p>
+    </div>
+  </div>
+
+  <!-- 用語解説ボックス -->
+  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 my-6">
+    <div class="flex items-center gap-2 mb-3">
+      <i data-lucide="lightbulb" class="w-6 h-6 text-yellow-500"></i>
+      <span class="font-bold text-blue-800">「エンドポイント」とは？</span>
+    </div>
+    <div class="space-y-3 text-gv-text">
+      <p>APIの<strong class="text-gv-secondary font-bold">窓口</strong>のこと。銀行なら「口座開設窓口」「振込窓口」「解約窓口」みたいに、目的ごとに別々の窓口（URL）がある。それがエンドポイントや。</p>
+    </div>
+  </div>
+
+  <!-- コード -->
+  <div class="my-6">
+    <div class="flex items-center gap-2 mb-2">
+      <i data-lucide="code" class="w-5 h-5 text-gv-secondary"></i>
+      <span class="font-bold text-gv-heading">このコードがやること</span>
+    </div>
+    <p class="text-gv-text ml-7 mb-4">タグのCRUD（登録・取得・更新・削除）の4つの窓口を定義しています。それぞれ受け取るデータと返すデータの形が違います。</p>
+
+    <div class="bg-gv-code rounded-xl overflow-hidden">
+      <div class="p-4 font-mono text-sm leading-relaxed">
+        <div class="text-gray-500"># 【POST】タグを新規登録する窓口</div>
+        <div><span class="text-indigo-200">@router.post(</span><span class="text-green-300">"/tags"</span><span class="text-indigo-200">, response_model=</span><span class="text-yellow-300">TagSchema</span><span class="text-indigo-200">)</span></div>
+        <div><span class="text-gray-500">async def </span><span class="text-indigo-200">create_tag(tag: </span><span class="text-blue-300">InsertAndUpdateTagSchema</span><span class="text-indigo-200">): ...</span></div>
+        <div class="mt-3 text-gray-500"># 【GET】タグ一覧を取得する窓口</div>
+        <div><span class="text-indigo-200">@router.get(</span><span class="text-green-300">"/tags"</span><span class="text-indigo-200">, response_model=list[</span><span class="text-yellow-300">TagSchema</span><span class="text-indigo-200">])</span></div>
+        <div><span class="text-gray-500">async def </span><span class="text-indigo-200">get_tags(): ...</span></div>
+        <div class="mt-3 text-gray-500"># 【PUT】タグを更新する窓口</div>
+        <div><span class="text-indigo-200">@router.put(</span><span class="text-green-300">"/tags/{tag_id}"</span><span class="text-indigo-200">, response_model=</span><span class="text-yellow-300">ResponseSchema</span><span class="text-indigo-200">)</span></div>
+        <div><span class="text-gray-500">async def </span><span class="text-indigo-200">update_tag(tag_id: int, tag: </span><span class="text-blue-300">InsertAndUpdateTagSchema</span><span class="text-indigo-200">): ...</span></div>
+        <div class="mt-3 text-gray-500"># 【DELETE】タグを削除する窓口</div>
+        <div><span class="text-indigo-200">@router.delete(</span><span class="text-green-300">"/tags/{tag_id}"</span><span class="text-indigo-200">, response_model=</span><span class="text-yellow-300">ResponseSchema</span><span class="text-indigo-200">)</span></div>
+        <div><span class="text-gray-500">async def </span><span class="text-indigo-200">delete_tag(tag_id: int): ...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mb-6">
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">各エンドポイントで<strong class="text-gv-secondary font-bold">受け取るスキーマ</strong>と<strong class="text-gv-secondary font-bold">返すスキーマ</strong>をまとめるとこうや👇</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- テーブル：エンドポイント一覧 -->
+  <div class="overflow-x-auto my-6">
+    <table class="w-full text-sm border-collapse">
+      <thead>
+        <tr>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 rounded-tl-xl text-left">HTTPメソッド</th>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 text-center">操作</th>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 text-center">受け取る（リクエスト）</th>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 rounded-tr-xl text-center">返す（レスポンス）</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gv-border">
+        <tr>
+          <td class="p-3 font-medium text-gv-heading bg-gray-50"><code class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold">POST /tags</code></td>
+          <td class="p-3 text-center">登録</td>
+          <td class="p-3 text-center"><code class="text-xs">InsertAndUpdateTagSchema</code><br><span class="text-gv-muted text-xs">(title)</span></td>
+          <td class="p-3 text-center"><code class="text-xs">TagSchema</code><br><span class="text-gv-muted text-xs">(title + tag_id)</span></td>
+        </tr>
+        <tr>
+          <td class="p-3 font-medium text-gv-heading bg-gray-50"><code class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">GET /tags</code></td>
+          <td class="p-3 text-center">一覧取得</td>
+          <td class="p-3 text-center"><span class="text-gv-dim">なし</span></td>
+          <td class="p-3 text-center"><code class="text-xs">list[TagSchema]</code><br><span class="text-gv-muted text-xs">(title + tag_id のリスト)</span></td>
+        </tr>
+        <tr>
+          <td class="p-3 font-medium text-gv-heading bg-gray-50"><code class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-bold">PUT /tags/{id}</code></td>
+          <td class="p-3 text-center">更新</td>
+          <td class="p-3 text-center"><code class="text-xs">InsertAndUpdateTagSchema</code><br><span class="text-gv-muted text-xs">(title)</span></td>
+          <td class="p-3 text-center"><code class="text-xs">ResponseSchema</code><br><span class="text-gv-muted text-xs">(message)</span></td>
+        </tr>
+        <tr>
+          <td class="p-3 font-medium text-gv-heading bg-gray-50"><code class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">DELETE /tags/{id}</code></td>
+          <td class="p-3 text-center">削除</td>
+          <td class="p-3 text-center"><span class="text-gv-dim">なし</span></td>
+          <td class="p-3 text-center"><code class="text-xs">ResponseSchema</code><br><span class="text-gv-muted text-xs">(message)</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- データの流れ全体像（シーケンス図） -->
+  <div class="bg-gray-50 rounded-2xl p-6 md:p-8 my-6">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+        <i data-lucide="arrow-left-right" class="w-5 h-5 text-gv-primary"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-gv-heading">データの流れ全体像</h3>
+        <p class="text-sm text-gv-muted">クライアントとサーバー間の通信</p>
+      </div>
+    </div>
+
+    <div class="my-6 overflow-x-auto">
+      <div class="flex justify-between min-w-[400px] mb-2 px-4">
+        <div class="w-36 text-center">
+          <div class="w-14 h-14 bg-blue-100 border-2 border-blue-300 rounded-full flex items-center justify-center mx-auto mb-1">
+            <i data-lucide="monitor" class="w-6 h-6 text-blue-600"></i>
+          </div>
+          <span class="text-sm font-bold text-blue-800">クライアント</span>
+          <p class="text-xs text-blue-500">（ブラウザ/アプリ）</p>
+        </div>
+        <div class="w-36 text-center">
+          <div class="w-14 h-14 bg-purple-100 border-2 border-purple-300 rounded-full flex items-center justify-center mx-auto mb-1">
+            <i data-lucide="server" class="w-6 h-6 text-purple-600"></i>
+          </div>
+          <span class="text-sm font-bold text-purple-800">サーバー（FastAPI）</span>
+        </div>
+      </div>
+
+      <div class="relative min-w-[400px] px-4">
+        <div class="absolute left-[calc(25%)] top-0 bottom-0 border-l-2 border-dashed border-blue-200"></div>
+        <div class="absolute left-[calc(75%)] top-0 bottom-0 border-l-2 border-dashed border-purple-200"></div>
+
+        <!-- POST/PUT -->
+        <div class="relative py-3">
+          <div class="ml-[25%] mr-[25%] flex items-center">
+            <div class="flex-1 border-t-2 border-blue-400"></div>
+            <i data-lucide="arrow-right" class="w-4 h-4 text-blue-500 -ml-1"></i>
+          </div>
+          <p class="text-xs text-blue-600 text-center font-medium mt-1">POST/PUT: <code class="bg-blue-100 px-1 rounded text-xs">InsertAndUpdateTagSchema</code></p>
+          <p class="text-xs text-blue-400 text-center">title: "和食"</p>
+        </div>
+
+        <!-- GET応答 -->
+        <div class="relative py-3">
+          <div class="ml-[25%] mr-[25%] flex items-center flex-row-reverse">
+            <div class="flex-1 border-t-2 border-dashed border-purple-400"></div>
+            <i data-lucide="arrow-left" class="w-4 h-4 text-purple-500 -mr-1"></i>
+          </div>
+          <p class="text-xs text-purple-600 text-center font-medium mt-1">GET応答: <code class="bg-purple-100 px-1 rounded text-xs">TagSchema</code></p>
+          <p class="text-xs text-purple-400 text-center">tag_id + title</p>
+        </div>
+
+        <!-- DELETE応答 -->
+        <div class="relative py-3">
+          <div class="ml-[25%] mr-[25%] flex items-center flex-row-reverse">
+            <div class="flex-1 border-t-2 border-dashed border-green-400"></div>
+            <i data-lucide="arrow-left" class="w-4 h-4 text-green-500 -mr-1"></i>
+          </div>
+          <p class="text-xs text-green-600 text-center font-medium mt-1">DELETE応答: <code class="bg-green-100 px-1 rounded text-xs">ResponseSchema</code></p>
+          <p class="text-xs text-green-400 text-center">message</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4">
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">なるほど…。POSTで登録したときは<code class="bg-indigo-100 px-1 rounded">TagSchema</code>で返すんですね。登録した結果を、IDつきで教えてくれるってことか</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">そや！「ちゃんと登録できたで、IDは123番やで」って返してあげるわけや。クライアント側はそのIDを使って後から更新や削除ができるようになるんや</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- セクション7: 間違えやすいポイント -->
+<div class="bg-white rounded-2xl shadow-sm border border-gv-border p-8 mb-8" id="mistakes">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+      <i data-lucide="triangle-alert" class="w-6 h-6 text-red-600"></i>
+    </div>
+    <div>
+      <h2 class="text-2xl font-bold text-gv-heading">間違えやすいポイント</h2>
+      <p class="text-gv-muted">よくある3つの間違いを防ごう</p>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mb-6">
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">ほんでな、ここからが大事やで。よくある<strong class="text-gv-secondary font-bold">間違い</strong>を3つ教えたるわ</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 間違い①：全部同じスキーマ -->
+  <div class="bg-red-50 border border-red-200 rounded-xl p-5 mb-6">
+    <div class="flex items-center gap-2 mb-3">
+      <i data-lucide="x-circle" class="w-6 h-6 text-gv-negative"></i>
+      <span class="font-bold text-red-800">間違い① 全部同じスキーマにしちゃう</span>
+    </div>
+
+    <div class="my-4">
+      <div class="bg-gv-code rounded-xl overflow-hidden">
+        <div class="p-4 font-mono text-sm leading-relaxed">
+          <div class="text-gray-500"># ❌ ダメな例：全部入りスキーマ</div>
+          <div><span class="text-gray-500">class </span><span class="text-yellow-300">TagSchema</span><span class="text-indigo-200">(BaseModel):</span></div>
+          <div class="ml-8"><span class="text-red-300">tag_id: int</span><span class="text-gray-500">       # ← 登録時にクライアントが知るわけない！</span></div>
+          <div class="ml-8"><span class="text-indigo-200">title: str</span></div>
+          <div class="ml-8"><span class="text-red-300">message: str</span><span class="text-gray-500">      # ← タグ情報を返すときにmessageいらん！</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto mt-4">
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr>
+            <th class="bg-red-200 text-red-800 p-2 rounded-tl-lg text-left">問題</th>
+            <th class="bg-red-200 text-red-800 p-2 rounded-tr-lg text-left">なぜ困るか</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-red-100">
+          <tr><td class="p-2 bg-white">登録時にtag_idが必須になる</td><td class="p-2 bg-white">クライアントはIDを知らないのに求められる</td></tr>
+          <tr><td class="p-2 bg-white">一覧取得でmessageが出る</td><td class="p-2 bg-white">タグ情報なのに余計な項目が混ざる</td></tr>
+          <tr><td class="p-2 bg-white">バリデーションが正しく機能しない</td><td class="p-2 bg-white">場面によって不要な項目までチェックされる</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mb-6">
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">確かに…申込用紙と受理証明書を1枚にまとめたら、どこに何を書けばいいか分からなくなりますね</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 間違い②：response_modelなし -->
+  <div class="bg-red-50 border border-red-200 rounded-xl p-5 mb-6">
+    <div class="flex items-center gap-2 mb-3">
+      <i data-lucide="x-circle" class="w-6 h-6 text-gv-negative"></i>
+      <span class="font-bold text-red-800">間違い② response_modelを指定しない</span>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 my-4">
+      <div>
+        <p class="text-xs font-bold text-red-700 mb-2">❌ ダメな例</p>
+        <div class="bg-gv-code rounded-xl overflow-hidden">
+          <div class="p-3 font-mono text-xs leading-relaxed">
+            <div><span class="text-indigo-200">@router.get(</span><span class="text-green-300">"/tags"</span><span class="text-indigo-200">)</span></div>
+            <div><span class="text-gray-500">async def </span><span class="text-indigo-200">get_tags():</span></div>
+            <div class="ml-4"><span class="text-gray-500">return</span> <span class="text-indigo-200">tags</span></div>
+            <div class="text-red-300 text-xs mt-1"># ← 何が返ってくるか分からない！</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="text-xs font-bold text-green-700 mb-2">✅ 良い例</p>
+        <div class="bg-gv-code rounded-xl overflow-hidden">
+          <div class="p-3 font-mono text-xs leading-relaxed">
+            <div><span class="text-indigo-200">@router.get(</span><span class="text-green-300">"/tags"</span><span class="text-indigo-200">,</span></div>
+            <div class="ml-4"><span class="text-indigo-200">response_model=list[</span><span class="text-yellow-300">TagSchema</span><span class="text-indigo-200">])</span></div>
+            <div><span class="text-gray-500">async def </span><span class="text-indigo-200">get_tags():</span></div>
+            <div class="ml-4"><span class="text-gray-500">return</span> <span class="text-indigo-200">tags</span></div>
+            <div class="text-green-300 text-xs mt-1"># ← TagSchemaの形で返ることが保証！</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-sm text-gv-text mt-3"><code class="bg-red-100 px-1 rounded">response_model</code>を書かないと、返すデータの形が保証されません。さらに、FastAPIは<code class="bg-red-100 px-1 rounded">response_model</code>を指定すると<strong class="text-gv-secondary font-bold">自動でAPIドキュメント（Swagger UI）にも反映</strong>してくれます。</p>
+  </div>
+
+  <!-- 間違い③：継承の方向 -->
+  <div class="bg-red-50 border border-red-200 rounded-xl p-5 mb-6">
+    <div class="flex items-center gap-2 mb-3">
+      <i data-lucide="x-circle" class="w-6 h-6 text-gv-negative"></i>
+      <span class="font-bold text-red-800">間違い③ 継承の方向を間違える</span>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 my-4">
+      <div>
+        <p class="text-xs font-bold text-red-700 mb-2">❌ 逆方向の継承</p>
+        <div class="bg-gv-code rounded-xl overflow-hidden">
+          <div class="p-3 font-mono text-xs leading-relaxed">
+            <div><span class="text-gray-500">class </span><span class="text-yellow-300">InsertAndUpdateTagSchema</span></div>
+            <div class="ml-4"><span class="text-indigo-200">(</span><span class="text-red-300">TagSchema</span><span class="text-indigo-200">):</span></div>
+            <div class="ml-4"><span class="text-gray-500">pass</span></div>
+            <div class="text-red-300 text-xs mt-1"># tag_idも含まれてしまう！</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="text-xs font-bold text-green-700 mb-2">✅ 正しい方向の継承</p>
+        <div class="bg-gv-code rounded-xl overflow-hidden">
+          <div class="p-3 font-mono text-xs leading-relaxed">
+            <div><span class="text-gray-500">class </span><span class="text-yellow-300">TagSchema</span></div>
+            <div class="ml-4"><span class="text-indigo-200">(</span><span class="text-green-300">InsertAndUpdateTagSchema</span><span class="text-indigo-200">):</span></div>
+            <div class="ml-4"><span class="text-indigo-200">tag_id: int = Field(...)</span></div>
+            <div class="text-green-300 text-xs mt-1"># tag_idを追加するだけ</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-sm text-gv-text mt-3"><strong class="text-gv-secondary font-bold">小さい方（項目が少ない方）を親にして、大きい方が継承する</strong>のが正しい方向です。</p>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4">
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-笑顔.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text"><strong class="text-gv-secondary font-bold">小さい方を親にして、大きい方が継承する</strong>んですね！</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha-得意げ.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">さすガネーシャや！✨ …いや、さすナツキや！飲み込み早いな</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-呆れ.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">自分で自分を褒めるのやめてくださいよ…</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- セクション8: バリデーション -->
+<div class="bg-white rounded-2xl shadow-sm border border-gv-border p-8 mb-8" id="validation">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+      <i data-lucide="shield-check" class="w-6 h-6 text-emerald-600"></i>
+    </div>
+    <div>
+      <h2 class="text-2xl font-bold text-gv-heading">バリデーションの自動チェック</h2>
+      <p class="text-gv-muted">スキーマが門番になってくれる</p>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mb-6">
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">もう一個だけ教えたるわ。スキーマを定義するとな、<strong class="text-gv-secondary font-bold">バリデーション（データの検査）が自動で動く</strong>んや</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">さっきの<code class="bg-indigo-100 px-1 rounded">min_length=1</code>みたいなやつですか？</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- バリデーションテーブル -->
+  <div class="overflow-x-auto my-6">
+    <table class="w-full text-sm border-collapse">
+      <thead>
+        <tr>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 rounded-tl-xl text-left">送られたデータ</th>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 text-center">titleの値</th>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 rounded-tr-xl text-center">結果</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gv-border">
+        <tr>
+          <td class="p-3 bg-gray-50 font-mono text-xs">{"title": "和食"}</td>
+          <td class="p-3 text-center">"和食"</td>
+          <td class="p-3 text-center"><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-bold">✅ OK!</span></td>
+        </tr>
+        <tr>
+          <td class="p-3 bg-gray-50 font-mono text-xs">{"title": ""}</td>
+          <td class="p-3 text-center">"" (空文字)</td>
+          <td class="p-3 text-center"><span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-bold">❌ エラー!</span><br><span class="text-xs text-gv-muted">min_length=1に違反</span></td>
+        </tr>
+        <tr>
+          <td class="p-3 bg-gray-50 font-mono text-xs">{}</td>
+          <td class="p-3 text-center">titleがない</td>
+          <td class="p-3 text-center"><span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-bold">❌ エラー!</span><br><span class="text-xs text-gv-muted">必須項目(...)が未入力</span></td>
+        </tr>
+        <tr>
+          <td class="p-3 bg-gray-50 font-mono text-xs">{"title": 123}</td>
+          <td class="p-3 text-center">数値</td>
+          <td class="p-3 text-center"><span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-bold">❌ エラー!</span><br><span class="text-xs text-gv-muted">str(文字列)じゃない</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mb-6">
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-感動.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">えっ、すごい…！自分でバリデーションのコード書かなくていいんですか！</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">そや！FastAPIはリクエストが来た瞬間に、スキーマの定義に合うかチェックして、ダメなら<strong class="text-gv-secondary font-bold">自動で422エラー（バリデーションエラー）を返してくれる</strong>んや</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- バリデーションフロー -->
+  <div class="bg-gray-50 rounded-2xl p-6 md:p-8 my-6">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+        <i data-lucide="git-branch" class="w-5 h-5 text-gv-primary"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-gv-heading">バリデーションの流れ</h3>
+        <p class="text-sm text-gv-muted">不正なデータは門前払い</p>
+      </div>
+    </div>
+
+    <div class="flex flex-col items-center gap-3">
+      <!-- 開始 -->
+      <div class="bg-indigo-100 border border-indigo-200 px-8 py-4 rounded-xl text-center max-w-md w-full">
+        <i data-lucide="monitor" class="w-6 h-6 text-gv-primary mx-auto mb-1"></i>
+        <div class="font-bold text-gv-heading">クライアントがリクエスト送信</div>
+        <div class="text-sm text-gv-muted font-mono">{"title": ""}</div>
+      </div>
+      <i data-lucide="arrow-down" class="w-6 h-6 text-gv-dim"></i>
+
+      <!-- 判定ノード -->
+      <div class="bg-yellow-50 border-2 border-yellow-300 px-8 py-4 rounded-xl text-center max-w-md w-full">
+        <div class="font-bold text-yellow-800">🔍 スキーマで検査</div>
+        <div class="text-sm text-yellow-600">min_length=1 を満たしている？</div>
+      </div>
+
+      <!-- YES / NO 分岐 -->
+      <div class="grid grid-cols-2 gap-4 w-full max-w-2xl">
+        <div class="flex flex-col items-center gap-2">
+          <span class="text-sm font-bold text-gv-positive">YES → 通過</span>
+          <i data-lucide="arrow-down" class="w-5 h-5 text-gv-dim"></i>
+          <div class="bg-green-50 border border-green-200 px-4 py-3 rounded-xl text-center w-full">
+            <div class="font-bold text-green-700">エンドポイントの処理へ</div>
+            <div class="text-sm text-green-500">正常にデータベース操作</div>
+          </div>
+        </div>
+        <div class="flex flex-col items-center gap-2">
+          <span class="text-sm font-bold text-gv-negative">NO → 門前払い</span>
+          <i data-lucide="arrow-down" class="w-5 h-5 text-gv-dim"></i>
+          <div class="bg-red-50 border border-red-200 px-4 py-3 rounded-xl text-center w-full">
+            <div class="font-bold text-red-700">422 エラーを自動返却</div>
+            <div class="text-sm text-red-500">「titleは1文字以上必要です」</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4">
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">おお！不正なデータがエンドポイントの処理に入る前にブロックされるんですね</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">そういうことや。スキーマは<strong class="text-gv-secondary font-bold">門番</strong>みたいなもんやな。おかしなデータは門前払いや</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- セクション9: まとめ -->
+<div class="bg-white rounded-2xl shadow-sm border border-gv-border p-8 mb-8" id="summary">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
+      <i data-lucide="check-circle" class="w-6 h-6 text-white"></i>
+    </div>
+    <div>
+      <h2 class="text-2xl font-bold text-gv-heading">まとめ</h2>
+      <p class="text-gv-muted">今日のポイントを整理</p>
+    </div>
+  </div>
+
+  <!-- 対話 -->
+  <div class="space-y-4 mb-6">
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">ほな、今日の話をまとめるで！</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- まとめテーブル -->
+  <div class="overflow-x-auto my-6">
+    <table class="w-full text-sm border-collapse">
+      <thead>
+        <tr>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 rounded-tl-xl text-left">スキーマ名</th>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 text-center">役割</th>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 text-center">持ってる項目</th>
+          <th class="bg-gradient-to-r from-gv-primary to-gv-secondary text-white p-3 rounded-tr-xl text-center">使う場面</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gv-border">
+        <tr>
+          <td class="p-3 font-medium text-gv-heading bg-gray-50"><code class="text-xs">InsertAndUpdateTagSchema</code></td>
+          <td class="p-3 text-center">入力用の契約書</td>
+          <td class="p-3 text-center"><code class="bg-blue-100 px-1 rounded text-xs">title</code> のみ</td>
+          <td class="p-3 text-center">POST（登録）、PUT（更新）</td>
+        </tr>
+        <tr>
+          <td class="p-3 font-medium text-gv-heading bg-gray-50"><code class="text-xs">TagSchema</code></td>
+          <td class="p-3 text-center">出力用の契約書</td>
+          <td class="p-3 text-center"><code class="bg-blue-100 px-1 rounded text-xs">title</code> + <code class="bg-purple-100 px-1 rounded text-xs">tag_id</code></td>
+          <td class="p-3 text-center">GET（一覧取得）、POST（登録結果）</td>
+        </tr>
+        <tr>
+          <td class="p-3 font-medium text-gv-heading bg-gray-50"><code class="text-xs">ResponseSchema</code></td>
+          <td class="p-3 text-center">処理結果通知</td>
+          <td class="p-3 text-center"><code class="bg-green-100 px-1 rounded text-xs">message</code> のみ</td>
+          <td class="p-3 text-center">PUT（更新結果）、DELETE（削除結果）</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 3大ポイントまとめ -->
+  <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200 my-6">
+    <div class="flex items-center gap-2 mb-4">
+      <i data-lucide="key" class="w-6 h-6 text-gv-primary"></i>
+      <span class="font-bold text-gv-heading text-lg">スキーマの3大ポイント</span>
+    </div>
+    <div class="space-y-3">
+      <div class="flex items-start gap-3">
+        <span class="bg-gv-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</span>
+        <div>
+          <p class="font-bold text-gv-heading">スキーマ = データの形を定義する契約書</p>
+          <p class="text-sm text-gv-muted">「何が必要で、何を返すか」を明確にする</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="bg-gv-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>
+        <div>
+          <p class="font-bold text-gv-heading">入力と出力でスキーマを分ける</p>
+          <p class="text-sm text-gv-muted">データの流れる方向と場面で使い分ける</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="bg-gv-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</span>
+        <div>
+          <p class="font-bold text-gv-heading">継承で共通部分を再利用する</p>
+          <p class="text-sm text-gv-muted">小さい方を親にして、大きい方が項目を追加する</p>
+        </div>
+      </div>
+      <div class="flex items-start gap-3 mt-2 pt-3 border-t border-indigo-200">
+        <span class="bg-gv-secondary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">+</span>
+        <div>
+          <p class="font-bold text-gv-heading">おまけ: バリデーションが自動で動く！</p>
+          <p class="text-sm text-gv-muted">不正なデータは門前払い（自分でif文書かなくてOK）</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 締めの対話 -->
+  <div class="space-y-4">
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-笑顔.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">スキーマって、ただのデータの入れ物じゃなくて、<strong class="text-gv-secondary font-bold">契約書 + 門番</strong>の2つの役割があるんですね</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha-得意げ.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">さすガネーシャや！✨ ワシの教えは天才的やろ？</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-呆れ.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">…自画自賛はさておき、説明はめちゃくちゃ分かりやすかったです。ありがとうございます</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha-ボケをかます.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">感謝するならあんみつ🍨をお供えしてくれや。ワシ、あんみつないと力出ぇへんねん</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3 flex-row-reverse">
+      <img src="images/natsuki-怒る.png" alt="ナツキ" class="w-12 h-12 rounded-full border-2 border-gv-natsuki flex-shrink-0">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text">それ毎回言ってません？！さっさと次のレッスンの準備してください！</p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3">
+      <img src="images/ganesha-決めポーズ.png" alt="ガネーシャ" class="w-12 h-12 rounded-full border-2 border-gv-ganesha flex-shrink-0">
+      <div class="bg-gradient-to-r from-amber-100 to-yellow-100 border-2 border-amber-300 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+        <p class="text-gv-text text-lg font-bold">はい、Oh, My God!! 🙏✨</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT_END -->
+  </main>
+
+  <!-- 目次（デスクトップのみ） -->
+  <nav class="toc">
+    <div class="text-sm font-bold text-gv-heading mb-2 px-2">目次</div>
+    <a href="#conclusion">結論</a>
+    <a href="#intro">導入</a>
+    <a href="#three-things">まず覚える3つ</a>
+    <a href="#contract">データの契約書</a>
+    <a href="#why-separate">なぜ分けるのか</a>
+    <a href="#inheritance">継承</a>
+    <a href="#endpoints">エンドポイント</a>
+    <a href="#mistakes">間違えやすい点</a>
+    <a href="#validation">バリデーション</a>
+    <a href="#summary">まとめ</a>
+  </nav>
+
+  <footer class="max-w-[880px] mx-auto px-6 pb-8 pt-6 border-t border-gv-border">
+    <p class="text-[11px] text-gv-dim text-center">&copy; miyata-press</p>
+  </footer>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>
