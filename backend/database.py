@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 #ベースクラスの定義
 class Base(DeclarativeBase):
+    pass
 
 # DBファイル作成
 base_dir = os.path.dirname(__file__)

@@ -2,23 +2,19 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from schemas.tag import InsertAndUpdateTagSchema, TagSchema, ResponseSchema
-# from fastapi.middleware.cors import CORSMiddleware
-
-from backend.database import Base, engine
-
-Base.metadata.create_all(bind=engine)
+from fastapi.middleware.cors import CORSMiddleware
 
 # テーブルを自動作成
 app = FastAPI(title="レシピ管理API", version="1.0.0")
 
 # CORS設定（Vue開発サーバーからのアクセスを許可）
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["http://localhost:5173"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
