@@ -6,7 +6,16 @@ const routes = [
     name: "home",
     component: () => import("../views/Home.vue"),
   },
-  // タグ一覧ページなど追加していく
+  {
+    path: "/tags",
+    name: "tag",
+    component: () => import("../views/tags/Index.vue"),
+  },
+  {
+    path: "/tags/create",
+    name: "tags-create",
+    component: () => import("../views/tags/Form.vue"),
+  },
 ]
 
 const router = createRouter({

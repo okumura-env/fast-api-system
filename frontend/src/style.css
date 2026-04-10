@@ -1,0 +1,205 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+  background: #fff9f0;
+  color: #3d2e1f;
+}
+
+/* ===== レイアウト ===== */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.header {
+  background: #e8850c;
+  color: #ffffff;
+  padding: 14px 24px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.header-title {
+  font-size: 1.25rem;
+}
+
+.container {
+  display: flex;
+  flex: 1;
+}
+
+/* ===== サイドバー ===== */
+.sidebar {
+  width: 220px;
+  background: #fef3e2;
+  border-right: 1px solid #f0d9b5;
+  padding: 20px 0;
+  flex-shrink: 0;
+}
+
+.sidebar a {
+  display: block;
+  padding: 10px 24px;
+  color: #5a3e1b;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: background 0.15s;
+}
+
+.sidebar a:hover {
+  background: #fde6c4;
+}
+
+.sidebar a.router-link-exact-active {
+  background: #f5c882;
+  font-weight: 600;
+  color: #3d2e1f;
+}
+
+/* ===== メインコンテンツ ===== */
+.content {
+  flex: 1;
+  padding: 28px 32px;
+  overflow-y: auto;
+}
+
+/* ===== 汎用スタイル ===== */
+h1 {
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+  color: #3d2e1f;
+}
+
+/* ===== テーブル ===== */
+.tag-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+.tag-table thead {
+  background: #f5deb3;
+}
+
+.tag-table th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  color: #5a3e1b;
+  border-bottom: 2px solid #e8c88a;
+}
+
+.tag-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0d9b5;
+  font-size: 0.95rem;
+}
+
+.tag-table tbody tr:hover {
+  background: #fef3e2;
+}
+
+.tag-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-edit {
+  background: #e8850c;
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btn-edit:hover {
+  background: #d0760a;
+}
+
+.btn-delete {
+  background: #f5f5f5;
+  color: #5a3e1b;
+  border: 1px solid #ccc;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btn-delete:hover {
+  background: #e8e8e8;
+}
+
+/* ===== ページヘッダー（タイトル + ボタン横並び） ===== */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+/* ===== 戻るボタン ===== */
+.btn-back {
+  display: inline-block;
+  background: #f5f5f5;
+  color: #5a3e1b;
+  border: 1px solid #ccc;
+  padding: 6px 16px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  margin-top: 20px;
+}
+
+.btn-back:hover {
+  background: #e8e8e8;
+}
+
+/* ===== フォーム ===== */
+.form-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.form-group input {
+  padding: 8px 12px;
+  border: 1px solid #d4b896;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  width: 260px;
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: #e8850c;
+}
+
+.btn-submit {
+  display: inline-block;
+  background: #e8850c;
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.btn-submit:hover {
+  background: #d0760a;
+}
