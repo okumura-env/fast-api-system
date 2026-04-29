@@ -6,7 +6,10 @@
         <div class="container">
             <nav class="sidebar">
                 <router-link to="/">ホーム</router-link>
-                <router-link to="/tags">タグ管理</router-link>
+                <router-link to="/recipes">レシピ一覧</router-link>
+                <router-link to="/ingredients">食材一覧</router-link>
+                <router-link to="/tags">タグ一覧</router-link>
+                <router-link to="/users">ユーザー一覧</router-link>
             </nav>
             <main class="content">
                 <router-view />
