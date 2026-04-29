@@ -175,7 +175,7 @@ h1 {
   margin-bottom: 20px;
 }
 
-.form-group input {
+.form-group input:not([type="checkbox"]):not([type="radio"]) {
   padding: 8px 12px;
   border: 1px solid #d4b896;
   border-radius: 4px;
@@ -184,7 +184,7 @@ h1 {
   outline: none;
 }
 
-.form-group input:focus {
+.form-group input:not([type="checkbox"]):not([type="radio"]):focus {
   border-color: #e8850c;
 }
 
@@ -202,4 +202,23 @@ h1 {
 
 .btn-submit:hover {
   background: #d0760a;
+}
+
+/* ===== タグバッジ ===== */
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-badge {
+  display: inline-block;
+  background: #fef3e2;
+  color: #5a3e1b;
+  border: 1px solid #d4b896;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  white-space: nowrap;
 }
