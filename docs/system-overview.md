@@ -1,15 +1,21 @@
 # レシピ管理システム 全体図
 
-## テーブル構成（5テーブル）
+## テーブル構成（6テーブル）
 
 ```
+users (ユーザー)
+├── id
+├── username     (ユニーク)
+├── password_hash(ハッシュ化済みパスワード)
+└── created_at
+
 recipes (レシピ)
 ├── id
+├── user_id      ──→ users.id (投稿者)
 ├── title        (タイトル)
 ├── description  (説明文)
 ├── servings     (何人前)
-├── created_at
-└── updated_at
+└── created_at
 
 tags (タグ)
 ├── id
@@ -32,6 +38,7 @@ recipe_ingredients (中間テーブル・数量付き)
 ## リレーション
 
 ```
+users   ←──一対多──→ recipes       (1人のユーザーが複数レシピを投稿)
 recipes ←──多対多──→ tags          (1つのレシピに複数タグ、1つのタグに複数レシピ)
 recipes ←──多対多──→ ingredients   (数量付き)
 ```

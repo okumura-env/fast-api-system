@@ -21,7 +21,7 @@ backend/
 │   └── tag.py
 ├── schemas/             ← Pydanticスキーマ（リクエスト/レスポンス定義）
 │   └── tag.py
-├── crud/                ← DB操作（CRUD関数）
+├── cruds/                ← DB操作（CRUD関数）
 │   └── tag.py
 └── routers/             ← APIルーター（エンドポイント定義）
     └── tag.py
@@ -70,13 +70,13 @@ npm run dev
 
 ## バックエンドのアーキテクチャ（レイヤー構成）
 
-リクエストの流れ: `routers/ → crud/ → models/`、バリデーションは `schemas/` が担当。
+リクエストの流れ: `routers/ → cruds/ → models/`、バリデーションは `schemas/` が担当。
 
 | レイヤー | 役割 |
 |---------|------|
 | `routers/` | エンドポイント定義。HTTPリクエストを受け取り、CRUDを呼び出す |
 | `schemas/` | Pydanticスキーマ。リクエスト/レスポンスのバリデーションと型定義 |
-| `crud/` | データベース操作。SQLAlchemy非同期セッションを使ったCRUD関数 |
+| `cruds/` | データベース操作。SQLAlchemy非同期セッションを使ったCRUD関数 |
 | `models/` | SQLAlchemyモデル。テーブル定義とカラム設定 |
 | `database.py` | DB接続設定。非同期エンジン・セッションファクトリ・`get_dbsession` |
 
@@ -89,7 +89,7 @@ npm run dev
 
 ## 現在の開発状況
 
-- タグのCRUD（models / schemas / crud / routers）が実装途中
+- タグのCRUD（models / schemas / cruds / routers）が実装途中
 - `main.py` にはルーターを使わない仮実装のエンドポイントが残っている
 - フロントエンドは初期テンプレート状態
 - recipes, ingredients, recipe_tags, recipe_ingredients は未実装
