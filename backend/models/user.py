@@ -3,17 +3,17 @@ from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
 
-class Tag(Base):
+class User(Base):
     # テーブル名
-    __tablename__="tags"
-    # タグID：PK：自動インクリメント
+    __tablename__="users"
+    # ユーザーID：PK：自動インクリメント
     id= Column(Integer, primary_key=True, autoincrement=True)
-    # タイトル：未入力不可
-    title = Column(String(50), nullable=False)
+    # ユーザーネーム：未入力不可
+    username = Column(String(50), nullable=False)
+
+    recipes = relationship("Recipe", back_populates="user")
     # 作成日時
     created_at = Column(DateTime, default=datetime.now)
     # 更新日時
     updated_at = Column(DateTime)
     
-    #relation
-    recipes = relationship("Recipe", secondary="recipe_tags", back_populates="tags")
