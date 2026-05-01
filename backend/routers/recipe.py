@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from schemas.recipe import InsertAndUpdateRecipeSchema, RecipeSchema, ResponseSchema
 import cruds.recipe as recipe_crud
+from deps.recipe import RecipeCreateUseCaseDep, RecipeUpdateUseCaseDep 
 from database import get_dbsession
 
 router = APIRouter(tags = ["Recipes"], prefix="/recipes")
@@ -12,10 +13,10 @@ router = APIRouter(tags = ["Recipes"], prefix="/recipes")
 # レシピ新規登録のエンドポイント
 @router.post("/", response_model=ResponseSchema)
 async def create_recipe(recipe: InsertAndUpdateRecipeSchema,
-                        db_session: AsyncSession = Depends(get_dbsession)):
+                        usecase: RecipeCreateUseCaseDep):
     try:
         # 新しいレシピをデータベースに登録
-        await recipe_crud.insert_recipe(db_session, recipe)
+        await usecase.execute(recipe)
         return ResponseSchema(message="レシピが正常に登録されました。")
     except Exception as e:
         # 登録に失敗した場合、HTTP 400エラーを返す
@@ -41,9 +42,9 @@ async def get_recipe_detail(recipe_id: int, db_session: AsyncSession = Depends(g
 # 特定のレシピを更新するエンドポイント
 @router.put("/{recipe_id}", response_model=ResponseSchema)
 async def modify_recipe(recipe_id: int, recipe: InsertAndUpdateRecipeSchema,
-                        db_session: AsyncSession = Depends(get_dbsession)):
+                        usecase: RecipeUpdateUseCaseDep):
     # 指定されたIdのレシピを新しいデータで更新
-    update_recipe = await recipe_crud.update_recipe(db_session, recipe_id, recipe)
+    update_recipe = await usecase.execute(recipe_id, recipe)
     if not update_recipe:
         # 更新対象が見つからない場合404エラーを返す
         raise HTTPException(status_code=404, detail="更新対象が見つかりません")
