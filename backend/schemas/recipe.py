@@ -1,12 +1,18 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from schemas.tag import TagBase
+from schemas.ingredient import IngredientBase
 
 # =====================================
 # スキーマ定義
 # =====================================
 
 # 登録・更新で使用するスキーマ
+# 中間テーブルの登録用スキーマ（新規追加）                                                                           
+class RecipeIngredientInput(BaseModel):                                                                              
+    ingredient_id: int                  
+    quantity: int  
+
 # recipe_id, user_id, title, description, servings
 class InsertAndUpdateRecipeSchema(BaseModel):
     # レシピの投稿者:このフィールドは必須です
@@ -27,6 +33,8 @@ class InsertAndUpdateRecipeSchema(BaseModel):
                         example=1)
     # 紐づくtags
     tag_ids: list[int] = []
+    # 紐づくingredients
+    ingredients: list[RecipeIngredientInput] = []
     
 # レシピの情報を表すスキーマ
 class RecipeSchema(InsertAndUpdateRecipeSchema):
@@ -36,6 +44,7 @@ class RecipeSchema(InsertAndUpdateRecipeSchema):
                         example=123)
 
     tags: Optional[List[TagBase]] = None
+    ingredients: Optional[List[IngredientBase]] = None
     model_config = {"from_attributes": True}
 
 # レスポンスで使用する結果用スキーマ

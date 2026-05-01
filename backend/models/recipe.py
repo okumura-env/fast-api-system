@@ -24,3 +24,6 @@ class Recipe(Base):
     
     #relation
     tags = relationship("Tag", secondary="recipe_tags", back_populates="recipes")
+
+    recipe_ingredients = relationship("RecipeIngredient", back_populates="recipe", cascade="all, delete-orphan")
+    ingredients = relationship("Ingredient", secondary="recipe_ingredients", viewonly=True)

@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
 
@@ -13,3 +14,7 @@ class Ingredient(Base):
     created_at = Column(DateTime, default=datetime.now)
     # 更新日時
     updated_at = Column(DateTime)
+
+     #relation
+    recipes = relationship("Recipe", secondary="recipe_ingredients", viewonly=True)
+    recipe_ingredients = relationship("RecipeIngredient", back_populates="ingredient") 

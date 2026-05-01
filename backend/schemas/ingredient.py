@@ -4,6 +4,12 @@ from pydantic import BaseModel, Field
 # スキーマ定義
 # ===========================
 
+# ネスト埋め込み専用（id付き, 中間テーブルを持つため）   
+class IngredientBase(BaseModel):                                                                                 
+    id: int                                                                                                                                  
+    name: str
+    model_config = {"from_attributes": True}  
+
 class InsertAndUpdateIngredientSchema(BaseModel):
     # 食材の名称のフィールドは必須です。
     name : str = Field(...,
@@ -15,6 +21,8 @@ class IngredientSchema(InsertAndUpdateIngredientSchema):
     id: int = Field(..., 
                     description="食材を一意に識別するID番号",
                     example=123)
+
+    model_config = {"from_attributes": True}
 
 # レスポンスで使用する結果用スキーマ
 class ResponseSchema(BaseModel):
