@@ -2,7 +2,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import schemas.user as user_schema
-import models.user as user_model
+from models.user import User
 from datetime import datetime
 
 # ============================
@@ -11,7 +11,7 @@ from datetime import datetime
 # 新規登録
 async def insert_user(
     db_session: AsyncSession,
-    user_data: user_schema.InsertAndUpdateUserSchema) -> user_model.User:
+    user_data: user_schema.InsertAndUpdateUserSchema) -> User:
     """
         新しいユーザーをデータベースに登録する関数
         Args:
@@ -21,7 +21,7 @@ async def insert_user(
             User: 作成されたユーザーのモデル
     """
     print("==== 新規登録：開始 ====")
-    new_user = user_model.User(**user_data.model_dump())
+    new_user = User(**user_data.model_dump())
     db_session.add(new_user)
     await db_session.commit()
     await db_session.refresh(new_user)
@@ -29,7 +29,7 @@ async def insert_user(
     return new_user
 
 # 全件取得
-async def get_users(db_session: AsyncSession) -> list[user_model.User]:
+async def get_users(db_session: AsyncSession) -> list[User]:
     """
         データベースから全てのユーザーを取得する関数
         Args:
@@ -38,14 +38,14 @@ async def get_users(db_session: AsyncSession) -> list[user_model.User]:
             list[User]: 取得された全てのユーザーのリスト
     """
     print("=== 全件取得：開始 ===")
-    result = await db_session.execute(select(user_model.User))
+    result = await db_session.execute(select(User))
     users = result.scalars().all()
     print("データ全件取得完了")
     return users
 
 # 1件取得
 async def get_user_by_id(db_session: AsyncSession,
-                        user_id: int) -> user_model.User | None:
+                        user_id: int) -> User | None:
     """
         データベースから特定のユーザーを1件取得する関数
         Args:
@@ -56,7 +56,7 @@ async def get_user_by_id(db_session: AsyncSession,
     """
     print(" === 1件取得：開始 ===")
     result = await db_session.execute(
-        select(user_model.User).where(user_model.User.id == user_id)
+        select(User).where(User.id == user_id)
     )
     user = result.scalars().first()
     print(">>>データ取得完了")
@@ -66,7 +66,7 @@ async def get_user_by_id(db_session: AsyncSession,
 async def update_user(
     db_session: AsyncSession,
     user_id: int,
-    target_data: user_schema.InsertAndUpdateUserSchema) -> user_model.User | None:
+    target_data: user_schema.InsertAndUpdateUserSchema) -> User | None:
     """
         データベースのユーザーを更新する関数
         Args:
@@ -90,7 +90,7 @@ async def update_user(
 # 削除処理
 async def delete_user(
     db_session: AsyncSession, user_id: int
-    ) -> user_model.User | None:
+    ) -> User | None:
     """
         データベースのユーザーを削除する関数
         Args:

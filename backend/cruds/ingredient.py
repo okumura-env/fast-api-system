@@ -2,7 +2,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import schemas.ingredient as ingredient_schema
-import models.ingredient as ingredient_model
+from models.ingredient import Ingredient
 from datetime import datetime
 
 # ============================
@@ -11,7 +11,7 @@ from datetime import datetime
 # 新規登録
 async def insert_ingredient(
     db_session: AsyncSession,
-    ingredient_data: ingredient_schema.InsertAndUpdateIngredientSchema) -> ingredient_model.Ingredient:
+    ingredient_data: ingredient_schema.InsertAndUpdateIngredientSchema) -> Ingredient:
     """
         新しい食材をデータベースに登録する関数
         Args:
@@ -21,7 +21,7 @@ async def insert_ingredient(
             Ingredient: 作成された食材のモデル
     """
     print("==== 新規登録：開始 ===")
-    new_ingredient = ingredient_model.Ingredient(**ingredient_data.model_dump())
+    new_ingredient = Ingredient(**ingredient_data.model_dump())
     db_session.add(new_ingredient)
     await db_session.commit()
     await db_session.refresh(new_ingredient)
@@ -29,7 +29,7 @@ async def insert_ingredient(
     return new_ingredient
 
 # 全件取得
-async def get_ingredients(db_session: AsyncSession) -> list[ingredient_model.Ingredient]:
+async def get_ingredients(db_session: AsyncSession) -> list[Ingredient]:
     """
         データベースから全ての食材を取得する関数
         Args:
@@ -38,14 +38,14 @@ async def get_ingredients(db_session: AsyncSession) -> list[ingredient_model.Ing
             list[Ingredient]: 取得された全ての食材のリスト
     """
     print("=== 全件取得：開始 ===")
-    result = await db_session.execute(select(ingredient_model.Ingredient))
+    result = await db_session.execute(select(Ingredient))
     ingredients = result.scalars().all()
     print(">>> データ全件取得完了")
     return ingredients
 
 # 1件取得
 async def get_ingredient_by_id(db_session: AsyncSession,
-                        ingredient_id: int) -> ingredient_model.Ingredient | None:
+                        ingredient_id: int) -> Ingredient | None:
     """
         データベースから特定の食材を1件取得する関数
         Args:
@@ -56,7 +56,7 @@ async def get_ingredient_by_id(db_session: AsyncSession,
     """
     print("=== 1件取得：開始 ===")
     result = await db_session.execute(
-        select(ingredient_model.Ingredient).where(ingredient_model.Ingredient.id == ingredient_id))
+        select(Ingredient).where(Ingredient.id == ingredient_id))
     ingredient = result.scalars().first()
     print(">>> データ取得完了")
     return ingredient
@@ -65,7 +65,7 @@ async def get_ingredient_by_id(db_session: AsyncSession,
 async def update_ingredient(
         db_session: AsyncSession,
         ingredient_id: int,
-        target_data: ingredient_schema.InsertAndUpdateIngredientSchema) -> ingredient_model.Ingredient | None:
+        target_data: ingredient_schema.InsertAndUpdateIngredientSchema) -> Ingredient | None:
     """
         データベースの食材を更新する関数
         Args:
@@ -90,7 +90,7 @@ async def update_ingredient(
 # 削除処理
 async def delete_ingredient(
         db_session: AsyncSession, ingredient_id: int
-        ) -> ingredient_model.Ingredient | None:
+        ) -> Ingredient | None:
     """
         データベースの食材を削除する関数
         Args:

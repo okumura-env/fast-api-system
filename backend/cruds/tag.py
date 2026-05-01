@@ -2,7 +2,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import schemas.tag as tag_schema
-import models.tag as tag_model
+from models.tag import Tag
 from datetime import datetime
 
 # ============================
@@ -11,7 +11,7 @@ from datetime import datetime
 # 新規登録
 async def insert_tag(
     db_session: AsyncSession,
-    tag_data: tag_schema.InsertAndUpdateTagSchema) -> tag_model.Tag:
+    tag_data: tag_schema.InsertAndUpdateTagSchema) -> Tag:
     """
         新しいタグをデータベースに登録する関数
         Args:
@@ -21,7 +21,7 @@ async def insert_tag(
             Tag: 作成されたタグのモデル
     """
     print("==== 新規登録：開始 ===")
-    new_tag = tag_model.Tag(**tag_data.model_dump())
+    new_tag = Tag(**tag_data.model_dump())
     db_session.add(new_tag)
     await db_session.commit()
     await db_session.refresh(new_tag)
@@ -29,7 +29,7 @@ async def insert_tag(
     return new_tag
 
 # 全件取得
-async def get_tags(db_session: AsyncSession) -> list[tag_model.Tag]:
+async def get_tags(db_session: AsyncSession) -> list[Tag]:
     """
         データベースから全てのタグを取得する関数
         Args:
@@ -38,14 +38,14 @@ async def get_tags(db_session: AsyncSession) -> list[tag_model.Tag]:
             list[Tag]: 取得された全てのタグのリスト
     """
     print("=== 全件取得：開始 ===")
-    result = await db_session.execute(select(tag_model.Tag))
+    result = await db_session.execute(select(Tag))
     tags = result.scalars().all()
     print(">>> データ全件取得完了")
     return tags
 
 # 1件取得
 async def get_tag_by_id(db_session: AsyncSession,
-                        tag_id: int) -> tag_model.Tag | None:
+                        tag_id: int) -> Tag | None:
     """
         データベースから特定のタグを1件取得する関数
         Args:
@@ -56,7 +56,7 @@ async def get_tag_by_id(db_session: AsyncSession,
     """
     print("=== 1件取得：開始 ===")
     result = await db_session.execute(
-        select(tag_model.Tag).where(tag_model.Tag.id == tag_id))
+        select(Tag).where(Tag.id == tag_id))
     tag = result.scalars().first()
     print(">>> データ取得完了")
     return tag
@@ -65,7 +65,7 @@ async def get_tag_by_id(db_session: AsyncSession,
 async def update_tag(
         db_session: AsyncSession,
         tag_id: int,
-        target_data: tag_schema.InsertAndUpdateTagSchema) -> tag_model.Tag | None:
+        target_data: tag_schema.InsertAndUpdateTagSchema) -> Tag | None:
     """
         データベースのタグを更新する関数
         Args:
@@ -90,7 +90,7 @@ async def update_tag(
 # 削除処理
 async def delete_tag(
         db_session: AsyncSession, tag_id: int
-        ) -> tag_model.Tag | None:
+        ) -> Tag | None:
     """
         データベースのタグを削除する関数
         Args:
