@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from schemas.recipe import InsertAndUpdateRecipeSchema, RecipeSchema, ResponseSchema
 import cruds.recipe as recipe_crud
-from deps.recipe import RecipeCreateUseCaseDep, RecipeUpdateUseCaseDep 
+from deps.usecases.recipe import RecipeCreateUseCaseDep, RecipeUpdateUseCaseDep 
 from database import get_dbsession
 
 router = APIRouter(tags = ["Recipes"], prefix="/recipes")

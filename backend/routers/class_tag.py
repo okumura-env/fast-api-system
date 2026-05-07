@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession                                                                                              
 from sqlalchemy.exc import IntegrityError
 from schemas.tag import InsertAndUpdateTagSchema, TagSchema, ResponseSchema                                                                  
-from deps.tag import TagRepoDep
+from deps.repositories.tag import TagRepoDep
 from database import get_dbsession
                                                                                                                                             
 router = APIRouter(tags=["Tags"], prefix="/tags")                                                                                            
