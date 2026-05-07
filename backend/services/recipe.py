@@ -1,6 +1,6 @@
-from sqlalchemy import select                                                                                        
 from sqlalchemy.ext.asyncio import AsyncSession                                                                      
 from fastapi import HTTPException        
+from sqlalchemy import select
 
 from models.tag import Tag                                                                                                        
 from models.ingredient import Ingredient 
@@ -25,4 +25,4 @@ class RecipeService:
 
         if len(ingredients) != len(set(ids)):
           raise HTTPException(status_code=404, detail="存在しない食材IDが含まれています")
-        return ingredients 
+        
